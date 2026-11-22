@@ -14,6 +14,9 @@
   --ok: #4cc79a;
   --warn: #f0a246;
   --bad: #ff7b80;
+
+  --page-max: 1640px; /* widest the whole page gets */
+  --side: 340px; /* width of the Template and Layers columns */
 }
 * {
   box-sizing: border-box;
@@ -33,7 +36,7 @@ body {
   color: var(--text);
 }
 .page {
-  max-width: 1016px;
+  max-width: var(--page-max);
   margin: 0 auto;
   padding: 18px 16px 40px;
   background: var(--column);
@@ -58,16 +61,36 @@ h1 {
   font-size: 15px;
 }
 
+/* ---------- Layout: Template (left) | Preview (.center) | Layers (right) ---------- */
 .cols {
   display: grid;
-  grid-template-columns: 436px 1fr;
-  gap: 32px;
-  align-items: start;
+  grid-template-columns: var(--side) minmax(0, 1fr) var(--side);
+  gap: 24px;
+  align-items: stretch;
 }
-.left {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+.cols > *,
+.preview {
+  min-width: 0;
+}
+
+/* medium screens (also narrow itch.io embeds): preview on top, Template + Layers below */
+@media (max-width: 1180px) {
+  .cols {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .center {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+}
+/* phones: everything stacked */
+@media (max-width: 860px) {
+  .cols {
+    grid-template-columns: 1fr;
+  }
+  .card {
+    padding: 22px 16px;
+  }
 }
 
 /* white panels */
@@ -179,13 +202,6 @@ input[type="text"] {
   border-color: var(--purple);
   box-shadow: inset 0 0 0 1px var(--purple);
 }
-.layer span {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 13.5px;
-}
 .layer button {
   border: 1px solid var(--line);
   background: #fff;
@@ -292,15 +308,6 @@ footer a:hover {
   color: #fff;
 }
 
-@media (max-width: 860px) {
-  .cols {
-    grid-template-columns: 1fr;
-  }
-  .card {
-    padding: 22px 16px;
-  }
-}
-
 /* ---------- Platform tabs + template cards ---------- */
 .tabs {
   display: flex;
@@ -330,10 +337,18 @@ footer a:hover {
 .tpl button {
   align-items: center;
   gap: 10px;
+  padding: 6px 10px;
 }
 .tpl button b {
   flex: 1;
+  min-width: 0;
   font-weight: 500;
+  font-size: 13.5px;
+  line-height: 1.15;
+}
+.tpl button small {
+  white-space: nowrap;
+  font-size: 12px;
 }
 .tpl button i {
   display: block;
@@ -475,7 +490,7 @@ input[type="number"] {
   gap: 0 10px;
 }
 
-/* ---------- GIF support badges ---------- */
+/* ---------- GIF / MP4 support badges ---------- */
 [hidden] {
   display: none !important;
 }
@@ -494,6 +509,10 @@ input[type="number"] {
 .gt.maybe {
   background: #fdebd0;
   color: #8a5200;
+}
+.gt.vid {
+  background: #e3dcf7;
+  color: #4b2a99;
 }
 #animnote {
   margin: 0 0 12px;
@@ -544,37 +563,10 @@ input[type="number"] {
   color: var(--mute);
   font-size: 12px;
 }
-.gt.vid {
-  background: #e3dcf7;
-  color: #4b2a99;
-}
 
 /* ---------- Stable layout: no sideways growth, constant height ---------- */
 html {
   scrollbar-gutter: stable;
-}
-
-.cols {
-  grid-template-columns: 436px minmax(0, 1fr);
-  align-items: stretch;
-}
-.left,
-.right,
-.preview {
-  min-width: 0;
-}
-
-/* left column takes the right column's height; Layers panel fills the rest */
-.left {
-  contain: size;
-}
-.left > .panel:first-child {
-  flex: none;
-}
-#drop {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
 }
 
 /* template list: fixed row height so the reserved space is exact */
@@ -623,7 +615,7 @@ footer .links a {
   flex: none;
 }
 
-/* ---------- Expanded view ---------- */
+/* ---------- Expanded view: the same three columns, filling the window ---------- */
 .pvhead {
   display: flex;
   justify-content: flex-end;
@@ -636,12 +628,17 @@ footer .links a {
 body.focus {
   overflow: hidden;
 }
-body.focus .right {
+body.focus .cols {
   position: fixed;
   inset: 0;
   z-index: 50;
+  padding: 16px;
+  gap: 16px;
   background: var(--card);
-  padding: 16px 16px 16px 392px;
+  grid-template-rows: minmax(0, 1fr);
+}
+/* each column scrolls on its own */
+body.focus .cols > * {
   overflow-y: auto;
 }
 body.focus .preview {
@@ -656,34 +653,14 @@ body.focus .stage {
 body.focus canvas {
   max-height: none;
 }
-body.focus .left {
-  position: fixed;
-  z-index: 60;
-  top: 16px;
-  left: 16px;
-  bottom: 16px;
-  width: 360px;
-  contain: none;
-  overflow-y: auto;
-  padding-right: 2px;
-}
-body.focus #drop {
-  flex: none;
-  overflow: visible;
-}
-
-@media (max-width: 860px) {
-  body.focus .right {
-    padding: 16px 16px 46vh;
+/* medium/small screens: expanded view is one scrolling sheet */
+@media (max-width: 1180px) {
+  body.focus .cols {
+    overflow-y: auto;
+    align-content: start;
+    grid-template-rows: none;
   }
-  body.focus .left {
-    top: auto;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: auto;
-    max-height: 44vh;
-    padding: 10px;
-    background: var(--card);
+  body.focus .cols > * {
+    overflow: visible;
   }
 }

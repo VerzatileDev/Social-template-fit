@@ -16,42 +16,20 @@
         </p>
 
         <div class="cols">
-          <div class="left">
-            <div class="panel">
-              <h2>Template</h2>
-              <div
-                class="tabs"
-                id="platform"
-                role="group"
-                aria-label="Platform"
-              ></div>
-              <div class="tpl" id="templates"></div>
-            </div>
-
-            <div class="panel" id="drop">
-              <h2>Layers</h2>
-              <div class="addrow">
-                <button class="btn small" id="choose">
-                  Add image, GIF, or video
-                </button>
-                <button class="btn small" id="addTxt">Add text</button>
-              </div>
-              <input
-                type="file"
-                id="file"
-                accept="image/*,video/*"
-                multiple
-                hidden
-              />
-              <p class="dropnote">
-                Or drag &amp; drop images, GIFs or videos onto this panel
-              </p>
-              <div id="layers"></div>
-              <div id="props"></div>
-            </div>
+          <!-- Left: template picker -->
+          <div class="panel" id="tplPanel">
+            <h2>Template</h2>
+            <div
+              class="tabs"
+              id="platform"
+              role="group"
+              aria-label="Platform"
+            ></div>
+            <div class="tpl" id="templates"></div>
           </div>
 
-          <div class="right">
+          <!-- Centre: preview -->
+          <div class="center">
             <div class="preview">
               <div class="pvhead">
                 <button class="btn small" id="focus" type="button">
@@ -131,6 +109,29 @@
                 >
               </div>
             </div>
+          </div>
+
+          <!-- Right: layers + properties -->
+          <div class="panel" id="drop">
+            <h2>Layers</h2>
+            <div class="addrow">
+              <button class="btn small" id="choose">
+                Add image, GIF, or video
+              </button>
+              <button class="btn small" id="addTxt">Add text</button>
+            </div>
+            <input
+              type="file"
+              id="file"
+              accept="image/*,video/*"
+              multiple
+              hidden
+            />
+            <p class="dropnote">
+              Or drag &amp; drop images, GIFs or videos onto this panel
+            </p>
+            <div id="layers"></div>
+            <div id="props"></div>
           </div>
         </div>
 
