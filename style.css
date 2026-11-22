@@ -630,7 +630,7 @@ body.focus {
 }
 body.focus .cols {
   position: fixed;
-  inset: 0;
+  inset: 0 0 56px 0; /* leaves room for the footer */
   z-index: 50;
   padding: 16px;
   gap: 16px;
@@ -640,6 +640,14 @@ body.focus .cols {
 /* each column scrolls on its own */
 body.focus .cols > * {
   overflow-y: auto;
+}
+body.focus footer {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 60;
+  margin: 0;
+  padding: 12px 24px;
+  background: var(--card);
 }
 body.focus .preview {
   border: 0;
@@ -667,6 +675,7 @@ body.focus canvas {
 
 /* ---------- Embedded view (iframe, e.g. itch.io): fits the frame, title + footer stay visible ---------- */
 body.embed {
+  --side: 300px;
   overflow: hidden;
 }
 body.embed .page {
@@ -679,14 +688,12 @@ body.embed .card {
   height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 14px 20px 12px;
+  padding: 12px 16px 10px;
 }
-body.embed h1 {
-  font-size: 22px;
-}
+/* the itch.io banner already shows the title */
+body.embed h1,
 body.embed .sub {
-  margin: 4px 0 12px;
-  font-size: 13px;
+  display: none;
 }
 body.embed .cols {
   flex: 1;
@@ -720,4 +727,23 @@ body.embed footer {
   flex: none;
   margin-top: 12px;
   padding-top: 10px;
+}
+
+/* ---------- Scrolling polish ---------- */
+/* long layer lists scroll on their own, so the properties below stay in view */
+#layers {
+  max-height: min(34vh, 320px);
+  overflow-y: auto;
+  padding-right: 2px;
+}
+/* slimmer scrollbars on every scrolling area */
+.cols > *,
+#layers {
+  scrollbar-width: thin;
+  scrollbar-color: #9aa0ad transparent;
+}
+/* no reserved scrollbar strip when the page itself never scrolls */
+html:has(body.embed),
+html:has(body.focus) {
+  scrollbar-gutter: auto;
 }
