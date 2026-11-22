@@ -136,7 +136,64 @@ function fitView() {
 }
 
 /* ---------- Layers ---------- */
-async function addImage(file) {
+/* ---------- Video layers (MP4 / WebM / MOV) ----------
+   A video layer is a muted <video> element drawn like an image. It follows the timeline:
+   played natively during playback, seeked when scrubbing, and seeked frame-by-frame on export. */
+const isVideoFile = (f) =>
+  f.type.startsWith("video/") || /\.(mp4|m4v|mov|webm)$/i.test(f.name);
+const isMediaFile = (f) => f.type.startsWith("image/") || isVideoFile(f);
+const mediaW = (l) => (l.vid ? l.img.videoWidth : l.img.width);
+const mediaH = (l) => (l.vid ? l.img.videoHeight : l.img.height);
+
+function loadVideo(file) {
+  return new Promise((res, rej) => {
+    const v = document.createElement("video");
+    v.muted = true;
+    v.loop = true;
+    v.playsInline = true;
+    v.preload = "auto";
+    v.onloadeddata = () => res(v);
+    v.onerror = () => rej(new Error("this browser can't play that video"));
+    v.src = URL.createObjectURL(file);
+  });
+}
+async function addVideo(file) {
+  let v;
+  try {
+    v = await loadVideo(file);
+  } catch (err) {
+    alert(`Could not add ${file.name}: ${err.message}`);
+    return;
+  }
+  const dur = v.duration;
+  if (Number.isFinite(dur) && (!layers.some((x) => x.anim || x.vid) || dur > D))
+    setDur(dur);
+  const l = {
+    id: uid++,
+    type: "image",
+    name: file.name,
+    img: v,
+    vid: true,
+    x: W / 2,
+    y: H / 2,
+    s: 1,
+  };
+  fill(l);
+  layers.push(l);
+  sel = l.id;
+  refresh();
+  setPlay(true);
+}
+function dropMedia(l) {
+  if (!l.vid) return;
+  l.img.pause();
+  URL.revokeObjectURL(l.img.src);
+  l.img.removeAttribute("src");
+  l.img.load();
+}
+
+async function addMedia(file) {
+  if (isVideoFile(file)) return addVideo(file);
   let anim = null;
   if (file.type === "image/gif" && "ImageDecoder" in window)
     anim = await decodeGif(file).catch(() => null);
@@ -194,18 +251,17 @@ function addText() {
 const get = (id) => layers.find((l) => l.id === id);
 
 function size(l) {
-  if (l.type === "image")
-    return { w: l.img.width * l.s, h: l.img.height * l.s };
+  if (l.type === "image") return { w: mediaW(l) * l.s, h: mediaH(l) * l.s };
   ctx.font = fontOf(l);
   return { w: ctx.measureText(l.text).width, h: l.size * 1.2 };
 }
 function fill(l) {
-  l.s = Math.max(W / l.img.width, H / l.img.height);
+  l.s = Math.max(W / mediaW(l), H / mediaH(l));
   l.x = W / 2;
   l.y = H / 2;
 }
 function contain(l) {
-  l.s = Math.min(W / l.img.width, H / l.img.height);
+  l.s = Math.min(W / mediaW(l), H / mediaH(l));
   l.x = W / 2;
   l.y = H / 2;
 }
@@ -295,6 +351,7 @@ async function runExport(btn, what, work) {
     alert(`Could not create the ${what}: ${err.message}`);
   }
   T = keep;
+  await seekAll(T);
   btn.textContent = label;
   btn.disabled = false;
   showT();
@@ -305,7 +362,7 @@ async function runExport(btn, what, work) {
 /* ---------- Fit check ---------- */
 function status() {
   const chips = [chip("idle", `${tpl.name} · ${W}×${H}`), animChip()];
-  $(".timeline").hidden = !hasMotion() && !layers.some((x) => x.anim);
+  $(".timeline").hidden = !hasMotion() && !layers.some((x) => x.anim || x.vid);
   const l =
     get(sel)?.type === "image"
       ? get(sel)
@@ -335,6 +392,13 @@ function status() {
       chip(
         "idle",
         `GIF · ${l.anim.frames.length} frames · ${l.anim.total.toFixed(2)}s`,
+      ),
+    );
+  if (l?.vid)
+    chips.push(
+      chip(
+        "idle",
+        `Video · ${l.img.duration.toFixed(2)}s · ${l.img.videoWidth}×${l.img.videoHeight}`,
       ),
     );
   if (l?.still)
@@ -402,6 +466,7 @@ function ui() {
     };
     b3.onclick = (e) => {
       e.stopPropagation();
+      dropMedia(l);
       layers = layers.filter((x) => x !== l);
       if (sel === l.id) sel = null;
       refresh();
@@ -591,7 +656,7 @@ cv.addEventListener(
 /* ---------- Buttons, drop zone ---------- */
 $("choose").onclick = () => $("file").click();
 $("file").onchange = (e) => {
-  [...e.target.files].forEach(addImage);
+  [...e.target.files].forEach(addMedia);
   e.target.value = "";
 };
 $("addTxt").onclick = addText;
@@ -613,9 +678,7 @@ const dz = $("drop");
 addEventListener("dragover", (e) => e.preventDefault());
 addEventListener("drop", (e) => {
   e.preventDefault();
-  [...e.dataTransfer.files]
-    .filter((f) => f.type.startsWith("image/"))
-    .forEach(addImage);
+  [...e.dataTransfer.files].filter(isMediaFile).forEach(addMedia);
 });
 
 /* ---------- Still image export (PNG, auto-reduced when a size limit applies) ----------
@@ -648,6 +711,7 @@ function isOpaque() {
 $("dl").onclick = () =>
   runExport($("dl"), "image", async () => {
     $("dl").textContent = "Working…";
+    await seekAll(T);
     draw(true);
     const max = maxBytes();
     let r = await stillBlob(1, "image/png"),
@@ -724,6 +788,39 @@ function frameOf(l) {
     l.anim.frames[l.anim.frames.length - 1]
   ).bmp;
 }
+// Position inside the video for timeline time t (loops like a GIF layer)
+const vidTime = (l, t) => {
+  const d = l.img.duration || 1;
+  return (((t - (l.t0 || 0)) % d) + d) % d;
+};
+function seekVideo(l, t) {
+  const v = l.img;
+  if (!v.seeking && Math.abs(v.currentTime - t) < 0.001)
+    return Promise.resolve();
+  return new Promise((res) => {
+    const done = () => {
+      clearTimeout(to);
+      v.removeEventListener("seeked", done);
+      res();
+    };
+    const to = setTimeout(done, 1500); // never hang an export on a missed event
+    v.addEventListener("seeked", done);
+    v.currentTime = t;
+  });
+}
+const seekAll = (t) =>
+  Promise.all(
+    layers.filter((l) => l.vid).map((l) => seekVideo(l, vidTime(l, t))),
+  );
+function playVideos(on) {
+  layers.forEach((l) => {
+    if (!l.vid) return;
+    if (on) {
+      l.img.currentTime = vidTime(l, T);
+      l.img.play().catch(() => {});
+    } else l.img.pause();
+  });
+}
 // In/out animation for a layer at time T. Returns null when the layer isn't visible yet / any more.
 function effect(l) {
   const t0 = l.t0 || 0,
@@ -787,6 +884,10 @@ function setT(t) {
   T = Math.min(D, Math.max(0, t));
   showT();
   draw();
+  if (layers.some((l) => l.vid))
+    seekAll(T).then(() => {
+      if (!playing) draw();
+    });
 }
 function showT() {
   $("scrub").value = T;
@@ -799,21 +900,33 @@ function setDur(v) {
   if (T > D) T = 0;
   showT();
 }
+let raf = 0;
 function setPlay(on) {
   playing = on;
   $("play").textContent = on ? "❚❚ Pause" : "▶ Play";
+  playVideos(on);
+  cancelAnimationFrame(raf); // never run two loops at once
   if (on) {
     last = performance.now();
-    requestAnimationFrame(tick);
+    raf = requestAnimationFrame(tick);
   }
 }
 function tick(ts) {
   if (!playing) return;
   T = (T + (ts - last) / 1000) % D;
   last = ts;
+  // videos play natively; re-sync only when they drift (e.g. timeline wrapped)
+  layers.forEach((l) => {
+    if (!l.vid || l.img.seeking) return;
+    const d = l.img.duration || 1,
+      diff = Math.abs(l.img.currentTime - vidTime(l, T)),
+      drift = Math.min(diff, d - diff);
+    if (drift > 0.3) l.img.currentTime = vidTime(l, T);
+    if (l.img.paused) l.img.play().catch(() => {});
+  });
   showT();
   draw();
-  requestAnimationFrame(tick);
+  raf = requestAnimationFrame(tick);
 }
 $("play").onclick = () => setPlay(!playing);
 $("scrub").oninput = (e) => {
@@ -849,6 +962,7 @@ async function encodeGif(gifenc, { s, fps, c }, label) {
   oc.imageSmoothingQuality = "high";
   for (let i = 0; i < n; i++) {
     T = i / fps;
+    await seekAll(T);
     draw(true);
     oc.fillStyle = exportBg();
     oc.fillRect(0, 0, w, h);
@@ -922,7 +1036,7 @@ function applyAnimMode() {
   const vidTxt = vid
     ? (tpl.vid === "VidS" ? "Video works" : "Video may work") +
       (tpl.hint ? ": " + tpl.hint : "")
-    : "";
+    : tpl.hint;
   $("animnote").textContent =
     tpl.gif === "GifNS" && vid
       ? `GIFs don't animate here, but video ${tpl.vid === "VidS" ? "does" : "may"}: download an MP4. ${tpl.hint}`
@@ -935,7 +1049,10 @@ function animChip() {
   const v = tpl.vid;
   const moving = layers.some(
     (l) =>
-      l.anim || (l.inA && l.inA !== "none") || (l.outA && l.outA !== "none"),
+      l.anim ||
+      l.vid ||
+      (l.inA && l.inA !== "none") ||
+      (l.outA && l.outA !== "none"),
   );
   const mp4 =
     v === "VidS" ? " · MP4 works too" : v === "VidMS" ? " · MP4 may work" : "";
@@ -1035,6 +1152,7 @@ $("dlmp4").onclick = () =>
       n = Math.max(1, Math.round(D * FPS));
     for (let i = 0; i < n && !encErr; i++) {
       T = i / FPS;
+      await seekAll(T);
       draw(true);
       oc.fillStyle = exportBg();
       oc.fillRect(0, 0, w, h);

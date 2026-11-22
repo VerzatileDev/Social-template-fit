@@ -31,11 +31,21 @@
             <div class="panel" id="drop">
               <h2>Layers</h2>
               <div class="addrow">
-                <button class="btn small" id="choose">Add image</button>
+                <button class="btn small" id="choose">
+                  Add image, GIF, or video
+                </button>
                 <button class="btn small" id="addTxt">Add text</button>
               </div>
-              <input type="file" id="file" accept="image/*" multiple hidden />
-              <p class="dropnote">Or drag &amp; drop images onto this panel</p>
+              <input
+                type="file"
+                id="file"
+                accept="image/*,video/*"
+                multiple
+                hidden
+              />
+              <p class="dropnote">
+                Or drag &amp; drop images, GIFs or videos onto this panel
+              </p>
               <div id="layers"></div>
               <div id="props"></div>
             </div>

@@ -10,7 +10,7 @@
      vid    VidS  = MP4 works
             VidMS = maybe
             VidNS = no MP4                      (default)
-     hint   Optional note about video specs, shown under the preview
+     hint   Optional note (video specs, limits, tips), shown under the preview
      zones  Optional overlay areas the platform covers, as fractions of the image:
             { label, x, y, w, h }
 
@@ -64,6 +64,7 @@ const PLATFORMS = {
 
   Instagram: {
     templates: [
+      { name: "Profile image 1:1", w: 1200, h: 1200 },
       {
         name: "Square post 1:1",
         w: 1080,
@@ -79,23 +80,91 @@ const PLATFORMS = {
         hint: "MP4 or MOV, 1080 px wide.",
       },
       {
-        name: "Story / Reel 9:16",
+        name: "Tall portrait post 3:4",
+        w: 1080,
+        h: 1440,
+        vid: "VidS",
+        hint: "MP4 or MOV, 1080 px wide.",
+      },
+      {
+        name: "Landscape post 1.91:1",
+        w: 1080,
+        h: 566,
+        vid: "VidS",
+        hint: "MP4 or MOV, 1080 px wide.",
+      },
+      {
+        name: "Carousel post 3:4",
+        w: 1080,
+        h: 1440,
+        vid: "VidS",
+        hint: "MP4 or MOV, 1080 px wide.",
+      },
+      {
+        name: "Story 9:16",
         w: 1080,
         h: 1920,
         vid: "VidS",
-        hint: "MP4 or MOV, 1080×1920, stories up to 60 s.",
+        hint: "MP4 or MOV, 1080×1920, up to 60 s. GIFs only work as stickers.",
       },
+      {
+        name: "Reel 9:16",
+        w: 1080,
+        h: 1920,
+        vid: "VidS",
+        hint: "MP4 or MOV, 1080×1920.",
+      },
+      { name: "Reel cover 9:16", w: 1080, h: 1920 },
+      { name: "Highlight cover 1:1", w: 1200, h: 1200 },
+      { name: "Profile grid preview 3:4", w: 1080, h: 1440 },
     ],
   },
 
   "X / Twitter": {
     templates: [
-      { name: "Header", w: 1500, h: 500 },
+      { name: "Profile image 1:1", w: 400, h: 400 },
+      { name: "Header banner 3:1", w: 1500, h: 500 },
       {
-        name: "Post image",
-        w: 1600,
-        h: 900,
+        name: "Square post 1:1",
+        w: 2048,
+        h: 2048,
         gif: "GifS",
+        vid: "VidS",
+        hint: "MP4, up to about 140 s and 512 MB.",
+      },
+      {
+        name: "Landscape post 16:9",
+        w: 1920,
+        h: 1080,
+        gif: "GifS",
+        vid: "VidS",
+        hint: "MP4, up to about 140 s and 512 MB.",
+      },
+      {
+        name: "Portrait post 3:4",
+        w: 1080,
+        h: 1440,
+        gif: "GifS",
+        vid: "VidS",
+        hint: "MP4, up to about 140 s and 512 MB.",
+      },
+      {
+        name: "Link preview 2:1",
+        w: 4096,
+        h: 2048,
+        hint: "If a GIF is used, only its first frame shows.",
+      },
+      {
+        name: "Video post 16:9",
+        w: 1920,
+        h: 1080,
+        vid: "VidS",
+        hint: "MP4, up to about 140 s and 512 MB.",
+      },
+      {
+        name: "Vertical video 9:16",
+        w: 1080,
+        h: 1920,
         vid: "VidS",
         hint: "MP4, up to about 140 s and 512 MB.",
       },
@@ -104,12 +173,40 @@ const PLATFORMS = {
 
   LinkedIn: {
     templates: [
-      { name: "Page banner", w: 1584, h: 396 },
+      { name: "Personal profile image 1:1", w: 1200, h: 1200 },
+      { name: "Personal cover banner 4:1", w: 1584, h: 396 },
+      { name: "Company logo 1:1", w: 1200, h: 1200 },
+      { name: "Company cover banner 5.91:1", w: 1512, h: 256 },
       {
-        name: "Post",
+        name: "Square post 1:1",
+        w: 1200,
+        h: 1200,
+        gif: "GifS",
+        vid: "VidS",
+        hint: "MP4, 3 s to 30 min, up to 5 GB.",
+      },
+      {
+        name: "Portrait post 4:5",
+        w: 1200,
+        h: 1500,
+        gif: "GifS",
+        vid: "VidS",
+        hint: "MP4, 3 s to 30 min, up to 5 GB.",
+      },
+      {
+        name: "Landscape post 1.91:1",
         w: 1200,
         h: 627,
-        gif: "GifMS",
+        gif: "GifS",
+        vid: "VidS",
+        hint: "MP4, 3 s to 30 min, up to 5 GB.",
+      },
+      { name: "Link preview 1.91:1", w: 1200, h: 627 },
+      { name: "Article cover 16:9", w: 1920, h: 1080 },
+      {
+        name: "Video post 16:9",
+        w: 1920,
+        h: 1080,
         vid: "VidS",
         hint: "MP4, 3 s to 30 min, up to 5 GB.",
       },
@@ -118,53 +215,268 @@ const PLATFORMS = {
 
   YouTube: {
     templates: [
-      { name: "Thumbnail", w: 1280, h: 720 },
-      { name: "Channel banner", w: 2560, h: 1440 },
+      { name: "Channel profile image 1:1", w: 1200, h: 1200 },
+      { name: "Channel banner 16:9", w: 2560, h: 1440 },
+      { name: "Video thumbnail 16:9", w: 3840, h: 2160 },
+      { name: "Shorts thumbnail 9:16", w: 2160, h: 3840 },
+      {
+        name: "Video 16:9",
+        w: 3840,
+        h: 2160,
+        vid: "VidS",
+        hint: "MP4, 3840×2160.",
+      },
+      {
+        name: "Shorts video 9:16",
+        w: 2160,
+        h: 3840,
+        vid: "VidS",
+        hint: "MP4, 2160×3840.",
+      },
+      { name: "Video watermark 1:1", w: 1000, h: 1000 },
     ],
   },
 
   Bluesky: {
     templates: [
-      { name: "Profile picture", w: 1000, h: 1000, gif: "GifNS" },
-      { name: "Banner", w: 3000, h: 1000 },
+      { name: "Profile image 1:1", w: 1200, h: 1200 },
+      { name: "Profile banner 3:1", w: 1500, h: 500 },
       {
-        name: "Post image",
-        w: 1200,
-        h: 675,
-        gif: "GifMS",
+        name: "Square post 1:1",
+        w: 2000,
+        h: 2000,
+        gif: "GifS",
         vid: "VidS",
         hint: "MP4, up to about 3 min and 100 MB.",
       },
+      {
+        name: "Landscape post 16:9",
+        w: 1920,
+        h: 1080,
+        gif: "GifS",
+        vid: "VidS",
+        hint: "MP4, up to about 3 min and 100 MB.",
+      },
+      {
+        name: "Portrait post 9:16",
+        w: 1080,
+        h: 1920,
+        gif: "GifS",
+        vid: "VidS",
+        hint: "MP4, up to about 3 min and 100 MB.",
+      },
+      {
+        name: "Video post 9:16",
+        w: 1080,
+        h: 1920,
+        vid: "VidS",
+        hint: "MP4, up to about 3 min and 100 MB.",
+      },
+      { name: "Link preview 1.91:1", w: 1200, h: 630 },
     ],
   },
 
   ArtStation: {
+    maxMB: 10,
     templates: [
-      { name: "Profile banner", w: 1920, h: 400 },
-      { name: "Project thumbnail", w: 1920, h: 1080 },
-      { name: "Avatar", w: 400, h: 400 },
+      { name: "Profile image 1:1", w: 1200, h: 1200 },
+      { name: "Profile background 3:1", w: 2560, h: 640 },
+      {
+        name: "Artwork image 1:1",
+        w: 3840,
+        h: 3840,
+        hint: "Over 400×400, up to 10,000×10,000 px, under 10 MB. 3840 px wide JPG at 100% is recommended.",
+      },
+      {
+        name: "Artwork landscape 16:9",
+        w: 3840,
+        h: 2160,
+        hint: "Over 400×400, up to 10,000×10,000 px, under 10 MB. 3840 px wide JPG at 100% is recommended.",
+      },
+      {
+        name: "Artwork portrait 3:4",
+        w: 2880,
+        h: 3840,
+        hint: "Over 400×400, up to 10,000×10,000 px, under 10 MB. 3840 px wide JPG at 100% is recommended.",
+      },
+      { name: "Project cover 16:9", w: 3840, h: 2160 },
+      {
+        name: "Video clip 16:9",
+        w: 3840,
+        h: 2160,
+        vid: "VidS",
+        hint: "MP4. 2K for free accounts, 4K for Premium.",
+      },
+      {
+        name: "Video clip vertical 9:16",
+        w: 2160,
+        h: 3840,
+        vid: "VidS",
+        hint: "MP4. 2K for free accounts, 4K for Premium.",
+      },
     ],
   },
 
   "Ko-fi": {
     templates: [
-      { name: "Page banner", w: 1500, h: 500 },
-      { name: "Avatar", w: 512, h: 512 },
+      { name: "Profile image 1:1", w: 1200, h: 1200 },
+      { name: "Cover banner 3:1", w: 1200, h: 400 },
+      {
+        name: "Square post 1:1",
+        w: 2000,
+        h: 2000,
+        gif: "GifS",
+        vid: "VidMS",
+        hint: "GIF: 20 MB free, 50 MB Contributor. Under 250 KB animates in the feed, up to 4 MB when opened, above 4 MB it doesn't animate. MP4 isn't a reliable direct upload.",
+      },
+      {
+        name: "Portrait post 4:5",
+        w: 1600,
+        h: 2000,
+        gif: "GifS",
+        vid: "VidMS",
+        hint: "GIF: 20 MB free, 50 MB Contributor. Under 250 KB animates in the feed, up to 4 MB when opened, above 4 MB it doesn't animate. MP4 isn't a reliable direct upload.",
+      },
+      {
+        name: "Landscape post 16:9",
+        w: 1920,
+        h: 1080,
+        gif: "GifS",
+        vid: "VidMS",
+        hint: "GIF: 20 MB free, 50 MB Contributor. Under 250 KB animates in the feed, up to 4 MB when opened, above 4 MB it doesn't animate. MP4 isn't a reliable direct upload.",
+      },
+      {
+        name: "Gallery artwork 1:1",
+        w: 2000,
+        h: 2000,
+        gif: "GifS",
+        vid: "VidMS",
+        hint: "GIF: 20 MB free, 50 MB Contributor. Under 250 KB animates in the feed, up to 4 MB when opened, above 4 MB it doesn't animate. MP4 isn't a reliable direct upload.",
+      },
+      {
+        name: "Commission artwork 1:1",
+        w: 2000,
+        h: 2000,
+        gif: "GifS",
+        vid: "VidMS",
+        hint: "GIF: 20 MB free, 50 MB Contributor. Under 250 KB animates in the feed, up to 4 MB when opened, above 4 MB it doesn't animate. MP4 isn't a reliable direct upload.",
+      },
+      {
+        name: "Shop product image 1:1",
+        w: 2000,
+        h: 2000,
+        gif: "GifS",
+        vid: "VidMS",
+        hint: "GIF: 20 MB free, 50 MB Contributor. Under 250 KB animates in the feed, up to 4 MB when opened, above 4 MB it doesn't animate. MP4 isn't a reliable direct upload.",
+      },
+      {
+        name: "Membership tier image 1:1",
+        w: 1200,
+        h: 1200,
+        gif: "GifS",
+        vid: "VidMS",
+        hint: "GIF: 20 MB free, 50 MB Contributor. Under 250 KB animates in the feed, up to 4 MB when opened, above 4 MB it doesn't animate. MP4 isn't a reliable direct upload.",
+      },
     ],
   },
 
   Reddit: {
     templates: [
-      { name: "Community banner", w: 1920, h: 384 },
-      { name: "Community icon", w: 256, h: 256 },
+      { name: "Profile avatar 1:1", w: 1200, h: 1200 },
+      { name: "Profile banner 10:3", w: 1920, h: 576 },
+      {
+        name: "Community banner",
+        w: 2160,
+        h: 256,
+        hint: "At least 1072×128 on desktop and 1080×128 on mobile.",
+      },
+      {
+        name: "Square post 1:1",
+        w: 2048,
+        h: 2048,
+        gif: "GifMS",
+        vid: "VidS",
+        hint: "GIF support depends on the posting method and community.",
+      },
+      {
+        name: "Portrait post 4:5",
+        w: 1440,
+        h: 1800,
+        gif: "GifMS",
+        vid: "VidS",
+        hint: "GIF support depends on the posting method and community.",
+      },
+      {
+        name: "Landscape post 16:9",
+        w: 1920,
+        h: 1080,
+        gif: "GifMS",
+        vid: "VidS",
+        hint: "GIF support depends on the posting method and community.",
+      },
+      { name: "Link preview 1.91:1", w: 1200, h: 630 },
+      { name: "Video post 16:9", w: 1920, h: 1080, vid: "VidS" },
+      { name: "Vertical video 9:16", w: 1080, h: 1920, vid: "VidS" },
     ],
   },
 
+  /* Mastodon limits vary per server. GIFs must be under 1 megapixel and are
+     converted to silent MP4, so the larger GIF templates are marked GifMS. */
   Mastodon: {
+    maxMB: 16,
     templates: [
-      { name: "Profile picture", w: 400, h: 400, gif: "GifMS" },
-      { name: "Header", w: 1500, h: 500, gif: "GifMS" },
-      { name: "Link preview", w: 1200, h: 630 },
+      {
+        name: "Profile avatar 1:1",
+        w: 1200,
+        h: 1200,
+        gif: "GifMS",
+        hint: "Downscaled to 400×400. GIFs must be under 1 megapixel.",
+      },
+      {
+        name: "Profile header 3:1",
+        w: 1500,
+        h: 500,
+        gif: "GifS",
+        hint: "Downscaled to 1500×500.",
+      },
+      {
+        name: "Square post 1:1",
+        w: 3840,
+        h: 3840,
+        gif: "GifMS",
+        vid: "VidS",
+        hint: "Images are downscaled to about 8.3 MP. GIFs must be under 1 MP and become silent MP4. Videos up to 99 MB.",
+      },
+      {
+        name: "Landscape post 16:9",
+        w: 3840,
+        h: 2160,
+        gif: "GifMS",
+        vid: "VidS",
+        hint: "Images are downscaled to about 8.3 MP. GIFs must be under 1 MP and become silent MP4. Videos up to 99 MB.",
+      },
+      {
+        name: "Portrait post 9:16",
+        w: 2160,
+        h: 3840,
+        gif: "GifMS",
+        vid: "VidS",
+        hint: "Images are downscaled to about 8.3 MP. GIFs must be under 1 MP and become silent MP4. Videos up to 99 MB.",
+      },
+      {
+        name: "Video post 16:9",
+        w: 3840,
+        h: 2160,
+        vid: "VidS",
+        hint: "Videos up to 99 MB.",
+      },
+      {
+        name: "Vertical video 9:16",
+        w: 2160,
+        h: 3840,
+        vid: "VidS",
+        hint: "Videos up to 99 MB.",
+      },
     ],
   },
 
@@ -201,21 +513,76 @@ const PLATFORMS = {
 
   "Unity Asset Store": {
     templates: [
-      { name: "Icon", w: 160, h: 160 },
-      { name: "Card", w: 420, h: 280 },
-      { name: "Cover", w: 1950, h: 1300 },
-      { name: "Social media", w: 1200, h: 630 },
+      {
+        name: "Key image / cover 3:2",
+        w: 1200,
+        h: 800,
+        hint: "Follow Unity's key image safe-zone templates.",
+      },
+      {
+        name: "Screenshot 3:2",
+        w: 2400,
+        h: 1600,
+        hint: "At least 1200 px wide. 2400×1600 is recommended.",
+      },
+      {
+        name: "Screenshot landscape 16:9",
+        w: 2560,
+        h: 1440,
+        hint: "At least 1200 px wide. Buyers can view it at full resolution.",
+      },
+      {
+        name: "Screenshot portrait 3:4",
+        w: 2400,
+        h: 3200,
+        hint: "At least 1200 px wide. Buyers can view it at full resolution.",
+      },
+      { name: "Product icon 1:1", w: 1200, h: 1200 },
+      { name: "Promotional graphic 3:2", w: 2400, h: 1600 },
     ],
   },
 
+  /* 3D model previews (native 3D assets) have no pixel size, so they aren't listed. */
   "Epic / Fab": {
+    maxMB: 3,
     templates: [
       {
-        name: "Gallery image",
+        name: "Product thumbnail 16:9",
+        w: 1920,
+        h: 1080,
+        hint: "JPG or PNG, minimum 1920×1080, under 3 MB each, under 25 MB for the whole gallery.",
+      },
+      {
+        name: "Gallery image 16:9",
+        w: 1920,
+        h: 1080,
+        hint: "JPG or PNG, minimum 1920×1080, under 3 MB each, under 25 MB for the whole gallery.",
+      },
+      {
+        name: "Product screenshot 16:9",
+        w: 2560,
+        h: 1440,
+        hint: "JPG or PNG, under 3 MB each, under 25 MB for the whole gallery.",
+      },
+      {
+        name: "Promotional image 16:9",
+        w: 1920,
+        h: 1080,
+        hint: "JPG or PNG, minimum 1920×1080, under 3 MB each, under 25 MB for the whole gallery.",
+      },
+      {
+        name: "Demonstration video 16:9",
         w: 1920,
         h: 1080,
         vid: "VidS",
-        hint: "Fab gallery video: 1920×1080 MP4, up to 300 MB.",
+        hint: "1920×1080 MP4, MOV or WEBM, up to 300 MB.",
+      },
+      {
+        name: "Showcase video 16:9",
+        w: 1920,
+        h: 1080,
+        vid: "VidS",
+        hint: "1920×1080 MP4, MOV or WEBM, up to 300 MB.",
       },
     ],
   },
