@@ -1258,3 +1258,4 @@ addEventListener("keydown", (e) => {
 pick(tpl);
 ui();
 syncBg();
+if (window.self !== window.top) setFocus(true);
