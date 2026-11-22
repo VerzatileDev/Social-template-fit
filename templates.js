@@ -490,12 +490,12 @@ const PLATFORMS = {
         gif: "GifS",
         zones: [{ label: "GIF label", x: 0.01, y: 0.02, w: 0.14, h: 0.11 }],
       },
-      { name: "Header image", w: 960, h: 400, gif: "GifMS" },
       { name: "Screenshot 16:9", w: 1920, h: 1080, gif: "GifS" },
       { name: "Screenshot 4:3", w: 1200, h: 900, gif: "GifS" },
       { name: "Screenshot 3:4 (portrait)", w: 900, h: 1200, gif: "GifS" },
       { name: "Screenshot 1:1", w: 800, h: 800, gif: "GifS" },
       { name: "Page banner", w: 2048, h: 880, gif: "GifS" },
+      { name: "MetadataHeader image", w: 960, h: 400, gif: "GifMS" },
       { name: "Metadata Wide cover (21:9)", w: 2100, h: 900 },
       {
         name: "Metadata Social media image",
