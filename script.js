@@ -1,97 +1,51 @@
-/* ---------- Templates: [name, width, height, animated GIF support] ----------
-   support: "yes" = animates, "maybe" = unreliable / sources disagree, "no" = shown as a still image */
-const PLATFORMS = {
-  Facebook: [
-    ["Page cover photo 2.62:1", 1640, 642, "no"],
-    ["Event cover photo 1.91:1", 1920, 1005, "no"],
-    ["Profile image 1:1", 1200, 1200, "no"],
-    ["Square post 1:1", 1440, 1440, "maybe"],
-    ["Portrait post 4:5", 1440, 1800, "maybe"],
-    ["Landscape post 16:9", 1092, 1080, "maybe"],
-    ["Shared Link preview 1.91:1", 1200, 630, "no"],
-    ["Story / Reel 9:16", 1440, 2560, "no"],
-  ],
-  Instagram: [
-    ["Square post 1:1", 1080, 1080, "no"],
-    ["Portrait post 4:5", 1080, 1350, "no"],
-    ["Story / Reel 9:16", 1080, 1920, "no"],
-  ],
-  "X / Twitter": [
-    ["Header", 1500, 500, "no"],
-    ["Post image", 1600, 900, "yes"],
-  ],
-  LinkedIn: [
-    ["Page banner", 1584, 396, "no"],
-    ["Post", 1200, 627, "maybe"],
-  ],
-  YouTube: [
-    ["Thumbnail", 1280, 720, "no"],
-    ["Channel banner", 2560, 1440, "no"],
-  ],
-  Bluesky: [
-    ["Profile picture", 1000, 1000, "maybe"],
-    ["Banner", 3000, 1000, "no"],
-    ["Post image", 1200, 675, "maybe"],
-  ],
-  ArtStation: [
-    ["Profile banner", 1920, 400, "no"],
-    ["Project thumbnail", 1920, 1080, "no"],
-    ["Avatar", 400, 400, "no"],
-  ],
-  "Ko-fi": [
-    ["Page banner", 1500, 500, "no"],
-    ["Avatar", 512, 512, "no"],
-  ],
-  Reddit: [
-    ["Community banner", 1920, 384, "no"],
-    ["Community icon", 256, 256, "no"],
-  ],
-  Mastodon: [
-    ["Profile picture", 400, 400, "maybe"],
-    ["Header", 1500, 500, "maybe"],
-    ["Link preview", 1200, 630, "no"],
-  ],
-  // 5th value (optional) = overlay zones the platform covers: [label, x, y, width, height] as fractions of the image
-  "itch.io": [
-    ["Cover image", 630, 500, "yes", [["GIF label", 0.01, 0.02, 0.14, 0.11]]],
-    ["Header image", 960, 400, "maybe"],
-    ["Screenshot 16:9", 1920, 1080, "yes"],
-    ["Screenshot 4:3", 1200, 900, "yes"],
-    ["Screenshot 3:4 (portrait)", 900, 1200, "yes"],
-    ["Screenshot 1:1", 800, 800, "yes"],
-    ["Page banner", 2048, 880, "yes"],
-    ["Metadata Wide cover (21:9)", 2100, 900, "no"],
-    [
-      "Metadata Social media image",
-      1200,
-      630,
-      "maybe",
-      [
-        ["May crop", 0, 0, 0.2417, 1],
-        ["May crop", 0.7583, 0, 0.2417, 1],
-      ],
-    ],
-    ["Profile /Metadata favicon", 500, 500, "no"],
-  ],
-  "Unity Asset Store": [
-    ["Icon", 160, 160, "no"],
-    ["Card", 420, 280, "no"],
-    ["Cover", 1950, 1300, "no"],
-    ["Social media", 1200, 630, "no"],
-  ],
-  "Epic / Fab": [["Gallery image", 1920, 1080, "no"]],
-};
-// most templates any platform has: used to keep the template list a constant height
-const MAX_TPL = Math.max(...Object.values(PLATFORMS).map((a) => a.length));
+/* =====================================================================
+   App logic. Template data (sizes, GIF/MP4 support, hints, zones, size
+   limits) lives in templates.js: load that file first.
+   ===================================================================== */
+
+const GIF_LEVELS = ["GifS", "GifMS", "GifNS"];
+const VID_LEVELS = ["VidS", "VidMS", "VidNS"];
+
+/* ---------- Template data: fill defaults + catch mistakes in templates.js ---------- */
+(function normalizeTemplates() {
+  for (const [pn, p] of Object.entries(PLATFORMS)) {
+    const seen = new Set();
+    p.templates.forEach((t) => {
+      const id = `${pn}/${t.name}`;
+      t.gif ??= "GifNS";
+      t.vid ??= "VidNS";
+      t.hint ??= "";
+      t.zones ??= [];
+      if (!(t.w > 0 && t.h > 0)) console.warn("templates.js: bad size for", id);
+      if (!GIF_LEVELS.includes(t.gif))
+        console.warn("templates.js: bad gif value", t.gif, "for", id);
+      if (!VID_LEVELS.includes(t.vid))
+        console.warn("templates.js: bad vid value", t.vid, "for", id);
+      if (seen.has(t.name)) console.warn("templates.js: duplicate name", id);
+      seen.add(t.name);
+    });
+  }
+})();
 
 const $ = (id) =>
   id[0] === "." ? document.querySelector(id) : document.getElementById(id);
 const cv = $("cv"),
   ctx = cv.getContext("2d");
-let plat = "Facebook",
-  tpl = PLATFORMS[plat][1],
-  W = tpl[1],
-  H = tpl[2];
+
+// most templates any platform has: keeps the template list a constant height
+const MAX_TPL = Math.max(
+  ...Object.values(PLATFORMS).map((p) => p.templates.length),
+);
+
+let plat, tpl;
+{
+  const [p, n] = DEFAULT_TEMPLATE;
+  const t = PLATFORMS[p]?.templates.find((x) => x.name === n);
+  plat = t ? p : Object.keys(PLATFORMS)[0];
+  tpl = t || PLATFORMS[plat].templates[0];
+}
+let W = tpl.w,
+  H = tpl.h;
 let layers = [],
   sel = null,
   uid = 1,
@@ -100,6 +54,17 @@ let T = 0,
   D = 3,
   playing = false,
   last = 0; // timeline: current time, length (s)
+
+const maxMB = () => PLATFORMS[plat].maxMB;
+const maxBytes = () => (maxMB() ? maxMB() * 1048576 : Infinity);
+const hasVid = () => tpl.vid !== "VidNS";
+const hasMotion = () => tpl.gif !== "GifNS" || hasVid();
+const chip = (cls, text) => `<span class="chip ${cls}">${text}</span>`;
+const refresh = () => {
+  ui();
+  draw();
+  status();
+};
 
 /* ---------- Template picker ---------- */
 function renderTabs() {
@@ -110,31 +75,43 @@ function renderTabs() {
     b.setAttribute("aria-pressed", p === plat);
     b.onclick = () => {
       plat = p;
-      pick(PLATFORMS[p][0]);
+      pick(PLATFORMS[p].templates[0]);
     };
     $("platform").appendChild(b);
   });
 }
 
+const badges = (t) =>
+  (t.gif === "GifS"
+    ? '<u class="gt yes">GIF</u>'
+    : t.gif === "GifMS"
+      ? '<u class="gt maybe">GIF?</u>'
+      : "") +
+  (t.vid === "VidS"
+    ? '<u class="gt vid">MP4</u>'
+    : t.vid === "VidMS"
+      ? '<u class="gt maybe">MP4?</u>'
+      : "");
+
 function renderTpl() {
   renderTabs();
-  $("templates").innerHTML = "";
-  $("templates").style.minHeight =
-    `calc(${MAX_TPL} * 46px + ${MAX_TPL - 1} * 6px)`;
-  PLATFORMS[plat].forEach((t) => {
+  const box = $("templates");
+  box.innerHTML = "";
+  box.style.minHeight = `calc(${MAX_TPL} * 46px + ${MAX_TPL - 1} * 6px)`;
+  PLATFORMS[plat].templates.forEach((t) => {
     const b = document.createElement("button");
     b.setAttribute("aria-pressed", t === tpl);
-    const k = 26 / Math.max(t[1], t[2]);
-    b.innerHTML = `<i style="width:${t[1] * k}px;height:${t[2] * k}px"></i><b>${t[0]}</b>${t[3] === "yes" ? '<u class="gt yes">GIF</u>' : t[3] === "maybe" ? '<u class="gt maybe">GIF?</u>' : ""}${VIDEO[plat + "/" + t[0]] ? '<u class="gt vid">MP4</u>' : ""}<small>${t[1]}×${t[2]}</small>`;
+    const k = 26 / Math.max(t.w, t.h);
+    b.innerHTML = `<i style="width:${t.w * k}px;height:${t.h * k}px"></i><b>${t.name}</b>${badges(t)}<small>${t.w}×${t.h}</small>`;
     b.onclick = () => pick(t);
-    $("templates").appendChild(b);
+    box.appendChild(b);
   });
 }
 function pick(t) {
   lastExport = null;
   tpl = t;
-  W = t[1];
-  H = t[2];
+  W = t.w;
+  H = t.h;
   cv.width = W;
   cv.height = H;
   layers.forEach((l) => {
@@ -167,9 +144,7 @@ async function addImage(file) {
     fill(l);
     layers.push(l);
     sel = l.id;
-    ui();
-    draw();
-    status();
+    refresh();
   };
   if (anim) {
     if (!layers.some((x) => x.anim) || anim.total > D) setDur(anim.total);
@@ -214,9 +189,7 @@ function addText() {
   };
   layers.push(l);
   sel = l.id;
-  ui();
-  draw();
-  status();
+  refresh();
 }
 const get = (id) => layers.find((l) => l.id === id);
 
@@ -295,11 +268,9 @@ function draw(forExport) {
   }
 }
 
-/* ---------- File size limits (MB) per platform ---------- */
-const MAX_MB = { "itch.io": 3 };
+/* ---------- Export bookkeeping ---------- */
 let lastExport = null; // { kind, bytes, plat, note, blocked }
 const mb = (b) => (b / 1048576).toFixed(2);
-const maxBytes = () => (MAX_MB[plat] ? MAX_MB[plat] * 1048576 : Infinity);
 function noteExport(kind, blob, extra) {
   lastExport = { kind, bytes: blob.size, plat, ...extra };
   status();
@@ -307,24 +278,40 @@ function noteExport(kind, blob, extra) {
 function saveBlob(blob, name) {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = name.replace(/[\s\/]+/g, "-");
+  a.download = name.replace(/[\s\/\\:*?"<>|]+/g, "-"); // safe on Windows too
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+// Shared wrapper for every export button: pauses playback, shows errors, restores the UI.
+async function runExport(btn, what, work) {
+  const label = btn.textContent,
+    wasPlaying = playing,
+    keep = T;
+  btn.disabled = true;
+  setPlay(false);
+  try {
+    await work();
+  } catch (err) {
+    alert(`Could not create the ${what}: ${err.message}`);
+  }
+  T = keep;
+  btn.textContent = label;
+  btn.disabled = false;
+  showT();
+  draw();
+  if (wasPlaying) setPlay(true);
 }
 
 /* ---------- Fit check ---------- */
 function status() {
-  const chips = [
-    `<span class="chip idle">${tpl[0]} · ${W}×${H}</span>`,
-    animChip(),
-  ];
+  const chips = [chip("idle", `${tpl.name} · ${W}×${H}`), animChip()];
   $(".timeline").hidden = !hasMotion() && !layers.some((x) => x.anim);
   const l =
     get(sel)?.type === "image"
       ? get(sel)
       : layers.find((x) => x.type === "image");
   if (!l) {
-    chips.push(`<span class="chip idle">Add an image to check the fit</span>`);
+    chips.push(chip("idle", "Add an image to check the fit"));
   } else {
     const { w, h } = size(l),
       e = 0.5;
@@ -335,43 +322,44 @@ function status() {
       l.y + h / 2 >= H - e;
     chips.push(
       covers
-        ? `<span class="chip ok">Fits the template</span>`
-        : `<span class="chip bad">Gaps at the edges</span>`,
+        ? chip("ok", "Fits the template")
+        : chip("bad", "Gaps at the edges"),
     );
-    if (l.s > 1.5)
-      chips.push(
-        `<span class="chip bad">Blurry: enlarged ${Math.round(l.s * 100)}%</span>`,
-      );
-    else if (l.s > 1.05)
-      chips.push(
-        `<span class="chip warn">Slightly enlarged ${Math.round(l.s * 100)}%</span>`,
-      );
-    else
-      chips.push(
-        `<span class="chip ok">Sharp: ${Math.round(l.s * 100)}% of original</span>`,
-      );
+    const pct = Math.round(l.s * 100);
+    if (l.s > 1.5) chips.push(chip("bad", `Blurry: enlarged ${pct}%`));
+    else if (l.s > 1.05) chips.push(chip("warn", `Slightly enlarged ${pct}%`));
+    else chips.push(chip("ok", `Sharp: ${pct}% of original`));
   }
   if (l?.anim)
     chips.push(
-      `<span class="chip idle">GIF · ${l.anim.frames.length} frames · ${l.anim.total.toFixed(2)}s</span>`,
+      chip(
+        "idle",
+        `GIF · ${l.anim.frames.length} frames · ${l.anim.total.toFixed(2)}s`,
+      ),
     );
   if (l?.still)
     chips.push(
-      `<span class="chip warn">GIF shown as a still: use Chrome, Edge or Safari to preview it</span>`,
+      chip(
+        "warn",
+        "GIF shown as a still: use Chrome, Edge or Safari to preview it",
+      ),
     );
-  chips.push(`<span class="chip idle">Animation ${D.toFixed(2)}s</span>`);
-  const lim = MAX_MB[plat];
-  if (lim) chips.push(`<span class="chip idle">Max ${lim} MB</span>`);
+  chips.push(chip("idle", `Animation ${D.toFixed(2)}s`));
+  const lim = maxMB();
+  if (lim) chips.push(chip("idle", `Max ${lim} MB`));
   if (lastExport && lastExport.plat === plat) {
     const x = lastExport;
-    if (x.blocked)
-      chips.push(
-        `<span class="chip bad">Not downloaded: ${x.kind} is still ${mb(x.bytes)} MB after shrinking, over the ${lim} MB limit. Try a shorter length or a simpler image</span>`,
-      );
-    else
-      chips.push(
-        `<span class="chip ok">Last ${x.kind}: ${mb(x.bytes)} MB${x.note ? " · reduced to fit: " + x.note : ""}</span>`,
-      );
+    chips.push(
+      x.blocked
+        ? chip(
+            "bad",
+            `Not downloaded: ${x.kind} is still ${mb(x.bytes)} MB after shrinking, over the ${lim} MB limit. Try a shorter length or a simpler image`,
+          )
+        : chip(
+            "ok",
+            `Last ${x.kind}: ${mb(x.bytes)} MB${x.note ? " · reduced to fit: " + x.note : ""}`,
+          ),
+    );
   }
   $("status").innerHTML = chips.join("");
 }
@@ -402,9 +390,7 @@ function ui() {
     const [b1, b2, b3] = d.querySelectorAll("button");
     d.onclick = () => {
       sel = l.id;
-      ui();
-      draw();
-      status();
+      refresh();
     };
     b1.onclick = (e) => {
       e.stopPropagation();
@@ -418,13 +404,10 @@ function ui() {
       e.stopPropagation();
       layers = layers.filter((x) => x !== l);
       if (sel === l.id) sel = null;
-      ui();
-      draw();
-      status();
+      refresh();
     };
     box.appendChild(d);
   });
-
   renderProps();
 }
 function renderProps() {
@@ -449,15 +432,11 @@ function renderProps0() {
     };
     $("f1").onclick = () => {
       fill(l);
-      ui();
-      draw();
-      status();
+      refresh();
     };
     $("f2").onclick = () => {
       contain(l);
-      ui();
-      draw();
-      status();
+      refresh();
     };
   } else {
     p.innerHTML = `<label>Text</label><input type="text" id="tx">
@@ -537,6 +516,11 @@ const pt = (e) => {
     y: ((e.clientY - r.top) * H) / r.height,
   };
 };
+// keeps the Size slider in step when scaling by handle or wheel
+function syncSize(l) {
+  const sz = $("sz");
+  if (sz) sz.value = l.type === "image" ? Math.round(l.s * 100) : l.size;
+}
 
 cv.addEventListener("pointerdown", (e) => {
   const p = pt(e);
@@ -560,9 +544,7 @@ cv.addEventListener("pointerdown", (e) => {
     cv.setPointerCapture(e.pointerId);
     cv.style.cursor = "grabbing";
   } else sel = null;
-  ui();
-  draw();
-  status();
+  refresh();
 });
 cv.addEventListener("pointermove", (e) => {
   const p = pt(e);
@@ -571,8 +553,7 @@ cv.addEventListener("pointermove", (e) => {
       f = Math.hypot(p.x - l.x, p.y - l.y) / scaling.d0;
     if (l.type === "image") l.s = Math.max(0.01, scaling.s0 * f);
     else l.size = Math.max(10, Math.round(scaling.z0 * f));
-    const sz = $("sz");
-    if (sz) sz.value = l.type === "image" ? Math.round(l.s * 100) : l.size;
+    syncSize(l);
     draw();
     status();
     return;
@@ -600,7 +581,7 @@ cv.addEventListener(
     const f = e.deltaY < 0 ? 1.04 : 1 / 1.04;
     if (l.type === "image") l.s *= f;
     else l.size = Math.max(10, Math.round(l.size * f));
-    ui();
+    syncSize(l);
     draw();
     status();
   },
@@ -664,12 +645,9 @@ function isOpaque() {
   return true;
 }
 
-$("dl").onclick = async () => {
-  const btn = $("dl"),
-    txt = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = "Working…";
-  try {
+$("dl").onclick = () =>
+  runExport($("dl"), "image", async () => {
+    $("dl").textContent = "Working…";
     draw(true);
     const max = maxBytes();
     let r = await stillBlob(1, "image/png"),
@@ -707,15 +685,9 @@ $("dl").onclick = async () => {
       noteExport(kind, r.blob, { blocked: true });
     } else {
       noteExport(kind, r.blob, { note });
-      saveBlob(r.blob, `${plat}-${tpl[0]}-${r.w}x${r.h}.${ext}`);
+      saveBlob(r.blob, `${plat}-${tpl.name}-${r.w}x${r.h}.${ext}`);
     }
-  } catch (err) {
-    alert("Could not create the image: " + err.message);
-  }
-  btn.textContent = txt;
-  btn.disabled = false;
-  draw();
-};
+  });
 
 addEventListener("resize", fitView);
 
@@ -725,19 +697,23 @@ async function decodeGif(file) {
     data: await file.arrayBuffer(),
     type: "image/gif",
   });
-  await dec.tracks.ready;
-  const n = dec.tracks.selectedTrack.frameCount;
-  if (n < 2) return null;
-  const frames = [];
-  let t = 0;
-  for (let i = 0; i < n; i++) {
-    const { image } = await dec.decode({ frameIndex: i });
-    const dur = (image.duration || 100000) / 1e6;
-    frames.push({ bmp: await createImageBitmap(image), start: t, dur });
-    t += dur;
-    image.close();
+  try {
+    await dec.tracks.ready;
+    const n = dec.tracks.selectedTrack.frameCount;
+    if (n < 2) return null;
+    const frames = [];
+    let t = 0;
+    for (let i = 0; i < n; i++) {
+      const { image } = await dec.decode({ frameIndex: i });
+      const dur = (image.duration || 100000) / 1e6;
+      frames.push({ bmp: await createImageBitmap(image), start: t, dur });
+      t += dur;
+      image.close();
+    }
+    return { frames, total: t };
+  } finally {
+    dec.close();
   }
-  return { frames, total: t };
 }
 function frameOf(l) {
   if (!l.anim) return l.img;
@@ -853,6 +829,13 @@ $("dur").onchange = (e) => {
 /* ---------- GIF export (auto-reduced when a size limit applies) ----------
    Each step is tried in order until the file fits: fewer colours, then lower FPS, then smaller size.
    Nothing is downloaded if the last step is still too big. */
+let gifencP = null; // encoder library is loaded once, then reused
+const loadGifenc = () =>
+  (gifencP ??= import("https://unpkg.com/gifenc@1.0.3").catch((e) => {
+    gifencP = null;
+    throw e;
+  }));
+
 async function encodeGif(gifenc, { s, fps, c }, label) {
   const { GIFEncoder, quantize, applyPalette } = gifenc;
   const w = Math.max(1, Math.round(W * s)),
@@ -883,16 +866,10 @@ async function encodeGif(gifenc, { s, fps, c }, label) {
   return { blob: new Blob([gif.bytes()], { type: "image/gif" }), w, h };
 }
 
-$("dlgif").onclick = async () => {
-  const btn = $("dlgif"),
-    txt = btn.textContent,
-    wasPlaying = playing,
-    keep = T;
-  btn.disabled = true;
-  setPlay(false);
-  try {
-    btn.textContent = "Loading encoder…";
-    const gifenc = await import("https://unpkg.com/gifenc@1.0.3");
+$("dlgif").onclick = () =>
+  runExport($("dlgif"), "GIF", async () => {
+    $("dlgif").textContent = "Loading encoder…";
+    const gifenc = await loadGifenc();
     const max = maxBytes(),
       f = +$("fps").value,
       slow = Math.max(5, Math.round(f * 0.67));
@@ -918,74 +895,70 @@ $("dlgif").onclick = async () => {
     }
     if (best.blob.size > max) {
       noteExport("GIF", best.blob, { blocked: true });
-    } else {
-      const parts = [];
-      if (best.t.c < 256) parts.push(`${best.t.c} colours`);
-      if (best.t.fps !== f) parts.push(`${best.t.fps} fps`);
-      if (best.t.s < 1)
-        parts.push(`${Math.round(best.t.s * 100)}% size (${best.w}×${best.h})`);
-      noteExport("GIF", best.blob, { note: parts.join(", ") });
-      saveBlob(best.blob, `${plat}-${tpl[0]}-${best.w}x${best.h}.gif`);
+      return;
     }
-  } catch (err) {
-    alert("Could not create the GIF: " + err.message);
-  }
-  T = keep;
-  btn.textContent = txt;
-  btn.disabled = false;
-  showT();
-  draw();
-  if (wasPlaying) setPlay(true);
-};
+    const parts = [];
+    if (best.t.c < 256) parts.push(`${best.t.c} colours`);
+    if (best.t.fps !== f) parts.push(`${best.t.fps} fps`);
+    if (best.t.s < 1)
+      parts.push(`${Math.round(best.t.s * 100)}% size (${best.w}×${best.h})`);
+    noteExport("GIF", best.blob, { note: parts.join(", ") });
+    saveBlob(best.blob, `${plat}-${tpl.name}-${best.w}x${best.h}.gif`);
+  });
 
-/* ---------- Per-template animation support ---------- */
-const ANIM_NOTE = {
-  yes: "Animated GIFs are supported here. Check the platform's file size limit before uploading.",
-  maybe:
+/* ---------- Per-template animation notes (support levels come from templates.js) ---------- */
+const GIF_NOTE = {
+  GifS: "Animated GIFs are supported here. Check the platform's file size limit before uploading.",
+  GifMS:
     "GIF animation on this placement is unreliable or has changed over time. Test it after uploading.",
-  no: "This placement shows a still image. Pause on the frame you want, then download the PNG.",
+  GifNS:
+    "This placement shows a still image. Pause on the frame you want, then download the PNG.",
 };
 function applyAnimMode() {
-  const a = tpl[3] || "no",
-    v = VIDEO[`${plat}/${tpl[0]}`];
-  $("dlgif").hidden = a === "no";
-  $("dlmp4").hidden = !v;
+  const vid = hasVid();
+  $("dlgif").hidden = tpl.gif === "GifNS";
+  $("dlmp4").hidden = !vid;
   $(".tlopts").hidden = !hasMotion();
+  const vidTxt = vid
+    ? (tpl.vid === "VidS" ? "Video works" : "Video may work") +
+      (tpl.hint ? ": " + tpl.hint : "")
+    : "";
   $("animnote").textContent =
-    a === "no"
-      ? v
-        ? `GIFs don't animate here, but video does: download an MP4. ${v}`
-        : ANIM_NOTE.no
-      : ANIM_NOTE[a] + (v ? ` Video also works: ${v}` : "");
-  $("zonesLbl").hidden = !tpl[4];
+    tpl.gif === "GifNS" && vid
+      ? `GIFs don't animate here, but video ${tpl.vid === "VidS" ? "does" : "may"}: download an MP4. ${tpl.hint}`
+      : GIF_NOTE[tpl.gif] + (vidTxt ? " " + vidTxt : "");
+  $("zonesLbl").hidden = !tpl.zones.length;
   if (!hasMotion()) setPlay(false);
   renderProps();
 }
 function animChip() {
-  const a = tpl[3] || "no",
-    v = VIDEO[`${plat}/${tpl[0]}`];
+  const v = tpl.vid;
   const moving = layers.some(
     (l) =>
       l.anim || (l.inA && l.inA !== "none") || (l.outA && l.outA !== "none"),
   );
-  if (a === "yes")
-    return `<span class="chip ok">Animated GIF supported${v ? " · MP4 works too" : ""}</span>`;
-  if (a === "maybe")
-    return `<span class="chip warn">GIF may not play${v ? ": MP4 is safer" : " here"}</span>`;
-  if (v) return `<span class="chip warn">No GIF here: export as MP4</span>`;
+  const mp4 =
+    v === "VidS" ? " · MP4 works too" : v === "VidMS" ? " · MP4 may work" : "";
+  if (tpl.gif === "GifS") return chip("ok", `Animated GIF supported${mp4}`);
+  if (tpl.gif === "GifMS")
+    return chip(
+      "warn",
+      `GIF may not play${hasVid() ? ": MP4 is safer" : " here"}`,
+    );
+  if (v === "VidS") return chip("warn", "No GIF here: export as MP4");
+  if (v === "VidMS") return chip("warn", "No GIF here: MP4 may work");
   return moving
-    ? `<span class="chip bad">Still image only: one frame is shown</span>`
-    : `<span class="chip idle">Still image only</span>`;
+    ? chip("bad", "Still image only: one frame is shown")
+    : chip("idle", "Still image only");
 }
 
 /* ---------- Platform overlay zones (e.g. itch.io GIF label, social image crop areas) ---------- */
 function drawZones(lw) {
-  const z = tpl[4];
-  if (!z || !$("zones").checked) return;
+  if (!tpl.zones.length || !$("zones").checked) return;
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  z.forEach(([name, x, y, w, h]) => {
+  tpl.zones.forEach(({ label, x, y, w, h }) => {
     const rx = x * W,
       ry = y * H,
       rw = w * W,
@@ -1009,57 +982,38 @@ function drawZones(lw) {
     ctx.lineWidth = lw * 1.5;
     ctx.strokeStyle = "rgba(0,0,0,.6)";
     ctx.lineJoin = "round";
-    ctx.strokeText(name, 0, 0, max);
+    ctx.strokeText(label, 0, 0, max);
     ctx.fillStyle = "#fff";
-    ctx.fillText(name, 0, 0, max);
+    ctx.fillText(label, 0, 0, max);
     ctx.restore();
   });
   ctx.restore();
 }
 $("zones").onchange = () => draw();
 
-/* ---------- Video (MP4) support per template: key = "Platform/Template" ---------- */
-const VIDEO = {
-  "Facebook/Post": "MP4 (H.264). Square or vertical fits feeds best.",
-  "Facebook/Story": "MP4, 1080×1920, 1–60 s per story.",
-  "Instagram/Square post": "MP4 or MOV, 1080 px wide.",
-  "Instagram/Portrait post": "MP4 or MOV, 1080 px wide.",
-  "Instagram/Story / Reel": "MP4 or MOV, 1080×1920, stories up to 60 s.",
-  "X / Twitter/Post image": "MP4, up to about 140 s and 512 MB.",
-  "LinkedIn/Post": "MP4, 3 s to 30 min, up to 5 GB.",
-  "Bluesky/Post image": "MP4, up to about 3 min and 100 MB.",
-  "Epic / Fab/Gallery image": "Fab gallery video: 1920×1080 MP4, up to 300 MB.",
-};
-const hasMotion = () =>
-  (tpl[3] || "no") !== "no" || !!VIDEO[`${plat}/${tpl[0]}`];
-
-// Frame-by-frame H.264 encode (WebCodecs) packed into an MP4 (mp4-muxer). No audio.
-$("dlmp4").onclick = async () => {
-  const btn = $("dlmp4"),
-    txt = btn.textContent,
-    wasPlaying = playing,
-    keep = T;
-  if (!("VideoEncoder" in window)) {
-    alert("MP4 export needs a browser with WebCodecs: Chrome, Edge or Safari.");
-    return;
-  }
-  btn.disabled = true;
-  setPlay(false);
-  try {
+/* ---------- MP4 export ----------
+   Frame-by-frame H.264 encode (WebCodecs) packed into an MP4 (mp4-muxer). No audio. */
+$("dlmp4").onclick = () =>
+  runExport($("dlmp4"), "MP4", async () => {
+    const btn = $("dlmp4");
+    if (!("VideoEncoder" in window))
+      throw new Error(
+        "MP4 export needs a browser with WebCodecs: Chrome, Edge or Safari.",
+      );
     btn.textContent = "Loading encoder…";
     const { Muxer, ArrayBufferTarget } =
       await import("https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/+esm");
     const FPS = 30,
       w = W + (W % 2),
       h = H + (H % 2); // H.264 needs even sizes
-    const cfg = {
+    const encCfg = {
       codec: w * h > 2097152 ? "avc1.640033" : "avc1.640028",
       width: w,
       height: h,
       framerate: FPS,
       bitrate: Math.round(Math.min(25e6, Math.max(2e6, w * h * FPS * 0.1))),
     };
-    if (!(await VideoEncoder.isConfigSupported(cfg)).supported)
+    if (!(await VideoEncoder.isConfigSupported(encCfg)).supported)
       throw new Error(`H.264 at ${w}×${h} isn't supported by this browser`);
     const muxer = new Muxer({
       target: new ArrayBufferTarget(),
@@ -1073,7 +1027,7 @@ $("dlmp4").onclick = async () => {
         encErr = e;
       },
     });
-    enc.configure(cfg);
+    enc.configure(encCfg);
     const off = document.createElement("canvas");
     off.width = w;
     off.height = h;
@@ -1101,18 +1055,9 @@ $("dlmp4").onclick = async () => {
     muxer.finalize();
     saveBlob(
       new Blob([muxer.target.buffer], { type: "video/mp4" }),
-      `${plat}-${tpl[0]}-${W}x${H}.mp4`,
+      `${plat}-${tpl.name}-${W}x${H}.mp4`,
     );
-  } catch (err) {
-    alert("Could not create the MP4: " + err.message);
-  }
-  T = keep;
-  btn.textContent = txt;
-  btn.disabled = false;
-  showT();
-  draw();
-  if (wasPlaying) setPlay(true);
-};
+  });
 
 /* ---------- Background colour (preview + exports) ---------- */
 // GIF and MP4 can't be transparent here, so they fall back to white when the background is off.
