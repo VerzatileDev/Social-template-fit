@@ -121,15 +121,23 @@ function pick(t) {
     }
   });
   renderTpl();
-  fitView();
   applyAnimMode();
   draw();
   status();
+  fitView(); // last, so it measures the final controls height
 }
 function fitView() {
-  const f = document.body.classList.contains("focus");
-  const maxW = Math.max(100, cv.parentElement.clientWidth),
-    maxH = f ? Math.max(200, innerHeight - 340) : innerHeight * 0.62;
+  const cls = document.body.classList;
+  const stage = cv.parentElement;
+  let maxH = innerHeight * 0.62;
+  if (cls.contains("focus")) maxH = Math.max(200, innerHeight - 340);
+  else if (cls.contains("embed")) {
+    // embedded: use whatever height the centre column has left after the controls
+    const pv = stage.closest(".preview");
+    const chrome = pv.offsetHeight - stage.offsetHeight;
+    maxH = Math.max(200, pv.parentElement.clientHeight - chrome - 8);
+  }
+  const maxW = Math.max(100, stage.clientWidth);
   const k = Math.min(maxW / W, maxH / H, 3);
   cv.style.width = W * k + "px";
   cv.style.height = H * k + "px";
@@ -1258,4 +1266,10 @@ addEventListener("keydown", (e) => {
 pick(tpl);
 ui();
 syncBg();
-if (window.self !== window.top) setFocus(true);
+
+/* ---------- Embedded (iframe, e.g. itch.io): fill the frame, keep title + footer ---------- */
+if (window.self !== window.top && innerWidth > 1180) {
+  document.body.classList.add("embed");
+  fitView();
+  draw();
+}

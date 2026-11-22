@@ -664,3 +664,60 @@ body.focus canvas {
     overflow: visible;
   }
 }
+
+/* ---------- Embedded view (iframe, e.g. itch.io): fits the frame, title + footer stay visible ---------- */
+body.embed {
+  overflow: hidden;
+}
+body.embed .page {
+  max-width: none;
+  height: 100vh;
+  min-height: 0;
+  padding: 8px;
+}
+body.embed .card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 20px 12px;
+}
+body.embed h1 {
+  font-size: 22px;
+}
+body.embed .sub {
+  margin: 4px 0 12px;
+  font-size: 13px;
+}
+body.embed .cols {
+  flex: 1;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+}
+/* each column scrolls on its own */
+body.embed .cols > * {
+  overflow-y: auto;
+}
+body.embed .preview {
+  border: 0;
+  min-height: 0;
+}
+body.embed .pvhead {
+  display: none;
+}
+body.embed .stage {
+  min-height: 0;
+}
+body.embed canvas {
+  max-height: none;
+}
+/* drop the reserved empty space: every pixel counts in a frame */
+body.embed #status,
+body.embed #animnote,
+body.embed .btns {
+  min-height: 0;
+}
+body.embed footer {
+  flex: none;
+  margin-top: 12px;
+  padding-top: 10px;
+}
