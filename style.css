@@ -15,8 +15,12 @@
   --warn: #f0a246;
   --bad: #ff7b80;
 
-  --page-max: 1640px; /* widest the whole page gets */
-  --side: 340px; /* width of the Template and Layers columns */
+  --page-max: 1760px; /* widest the whole page gets */
+  --side: clamp(
+    280px,
+    22vw,
+    360px
+  ); /* width of the Template and Layers columns */
 }
 * {
   box-sizing: border-box;
@@ -24,6 +28,9 @@
 html,
 body {
   margin: 0;
+}
+html {
+  scrollbar-gutter: stable;
 }
 body {
   font:
@@ -47,7 +54,6 @@ body {
   border-radius: 18px;
   padding: 30px 32px 24px;
 }
-
 h1 {
   margin: 0;
   text-align: center;
@@ -61,29 +67,27 @@ h1 {
   font-size: 15px;
 }
 
-/* ---------- Layout: Template (left) | Preview (.center) | Layers (right) ---------- */
+/* ---------- Layout ----------
+   Small screens: preview on top, Template + Layers below, page scrolls.
+   Wide screens (1181px+): three columns that always fit the window, no page scroll. */
 .cols {
   display: grid;
-  grid-template-columns: var(--side) minmax(0, 1fr) var(--side);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 24px;
-  align-items: stretch;
 }
-.cols > *,
-.preview {
+.cols > * {
   min-width: 0;
 }
-
-/* medium screens (also narrow itch.io embeds): preview on top, Template + Layers below */
-@media (max-width: 1180px) {
-  .cols {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-  .center {
-    grid-column: 1 / -1;
-    order: -1;
-  }
+.center {
+  grid-column: 1 / -1;
+  order: -1;
 }
-/* phones: everything stacked */
+.col-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 @media (max-width: 860px) {
   .cols {
     grid-template-columns: 1fr;
@@ -93,7 +97,99 @@ h1 {
   }
 }
 
-/* white panels */
+@media (min-width: 1181px) {
+  html {
+    scrollbar-gutter: auto;
+  }
+  body {
+    overflow: hidden;
+  }
+  .page {
+    height: 100vh;
+    min-height: 0;
+    padding: 12px 16px;
+  }
+  .card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 14px 20px 10px;
+  }
+  h1 {
+    font-size: 22px;
+  }
+  .sub {
+    margin: 4px 0 12px;
+    font-size: 13px;
+  }
+  .cols {
+    flex: 1;
+    min-height: 0;
+    grid-template-columns: var(--side) minmax(0, 1fr) var(--side);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .cols > * {
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .center {
+    grid-column: auto;
+    order: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .preview {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .stage {
+    flex: 1;
+    height: auto;
+    min-height: 160px;
+  }
+  /* the template list scrolls inside its panel, the details panel stays in view */
+  #tplPanel {
+    flex: 1 1 0;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+  }
+  #tplPanel .tabs {
+    flex: none;
+  }
+  .tpl {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  #detailsPanel {
+    flex: none;
+  }
+  /* canvas options sit at the bottom of the Layers panel */
+  #drop {
+    display: flex;
+    flex-direction: column;
+  }
+  .canvasopts {
+    margin-top: auto;
+  }
+  footer {
+    flex: none;
+    margin-top: 10px;
+    padding-top: 8px;
+  }
+}
+/* short windows: drop the subtitle to give the canvas more room */
+@media (min-width: 1181px) and (max-height: 800px) {
+  .sub {
+    display: none;
+  }
+}
+
+/* ---------- White panels ---------- */
 .panel {
   background: var(--panel);
   color: var(--panel-ink);
@@ -105,27 +201,8 @@ h1 {
   font-size: 17px;
   text-align: center;
 }
-.drop {
-  border: 2px dashed var(--line);
-  text-align: center;
-  padding: 24px 16px 16px;
-}
-.drop.over {
-  border-color: var(--purple);
-  background: #f3eeff;
-}
-.drop p {
-  margin: 0 0 10px;
-  color: var(--panel-mute);
-}
-.drop small {
-  display: block;
-  margin-top: 10px;
-  color: var(--panel-mute);
-  font-size: 12px;
-}
 
-/* buttons */
+/* ---------- Buttons + inputs ---------- */
 .btn {
   background: var(--purple);
   color: #fff;
@@ -150,7 +227,6 @@ input:focus-visible {
   outline: 2px solid var(--purple);
   outline-offset: 2px;
 }
-
 select,
 input[type="text"] {
   width: 100%;
@@ -161,154 +237,24 @@ input[type="text"] {
   color: var(--panel-ink);
   background: #fff;
 }
-.tpl {
-  display: grid;
-  gap: 6px;
-  margin-top: 10px;
-}
-.tpl button {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 10px;
+input[type="number"] {
+  padding: 6px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fff;
-  color: var(--panel-ink);
   font: inherit;
-  cursor: pointer;
-  text-align: left;
-}
-.tpl button small {
-  color: var(--panel-mute);
-}
-.tpl button[aria-pressed="true"] {
-  border-color: var(--purple);
-  box-shadow: inset 0 0 0 1px var(--purple);
-  background: #f3eeff;
-}
-
-/* layers */
-.layer {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  margin-bottom: 6px;
-  cursor: pointer;
-}
-.layer.sel {
-  border-color: var(--purple);
-  box-shadow: inset 0 0 0 1px var(--purple);
-}
-.layer button {
-  border: 1px solid var(--line);
+  color: var(--panel-ink);
   background: #fff;
-  border-radius: 6px;
-  padding: 1px 7px;
-  cursor: pointer;
-}
-#props label {
-  display: block;
-  font-size: 12.5px;
-  color: var(--panel-mute);
-  margin: 10px 0 4px;
-}
-#props .row {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-top: 10px;
+  width: 100%;
 }
 input[type="range"] {
   width: 100%;
   accent-color: var(--purple);
 }
-
-/* preview area */
-.preview {
-  border: 1.5px dashed #2e3440;
-  border-radius: 14px;
-  padding: 16px;
-  min-height: 260px;
-}
-#status {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 14px;
-}
-.chip {
-  padding: 3px 10px;
-  border-radius: 99px;
-  border: 1px solid currentColor;
-  font-size: 12.5px;
-}
-.ok {
-  color: var(--ok);
-}
-.warn {
-  color: var(--warn);
-}
-.bad {
-  color: var(--bad);
-}
-.idle {
-  color: var(--mute);
-}
-.stage {
-  display: flex;
-  justify-content: center;
-}
-canvas {
-  max-width: 100%;
-  height: auto;
-  max-height: 62vh;
-  border-radius: 6px;
-  cursor: grab;
-  touch-action: none;
-  background: repeating-conic-gradient(#c9ccd3 0 25%, #e6e8ec 0 50%) 0 0/16px
-    16px;
-}
-.hint {
-  color: var(--mute);
-  font-size: 13px;
-  text-align: center;
-  margin: 12px 0;
-}
-.actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.check {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  color: var(--mute);
-  font-size: 14px;
+[hidden] {
+  display: none !important;
 }
 
-/* footer */
-footer {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 36px;
-  padding-top: 20px;
-  border-top: 1px solid #fff;
-  color: var(--mute);
-}
-footer a {
-  color: var(--mute);
-  text-decoration: none;
-  margin-left: 22px;
-}
-footer a:hover {
-  color: #fff;
-}
-
-/* ---------- Platform tabs + template cards ---------- */
+/* ---------- Platform tabs + template list ---------- */
 .tabs {
   display: flex;
   flex-wrap: wrap;
@@ -320,24 +266,42 @@ footer a:hover {
 }
 .tabs button {
   flex: 0 0 auto;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 7px 12px;
+  background: #fff;
+  color: var(--panel-ink);
+  font: inherit;
+  font-size: 13px;
+  padding: 5px 10px;
+  cursor: pointer;
 }
 .tabs button:hover {
   background: #e4e6ec;
 }
 .tabs button[aria-pressed="true"] {
   background: var(--purple);
+  border-color: var(--purple);
   color: #fff;
-  box-shadow: none;
 }
 .tpl {
-  margin-top: 14px;
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  align-content: start;
 }
 .tpl button {
+  display: flex;
   align-items: center;
   gap: 10px;
+  height: 46px;
   padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--panel-ink);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
 }
 .tpl button b {
   flex: 1;
@@ -349,6 +313,7 @@ footer a:hover {
 .tpl button small {
   white-space: nowrap;
   font-size: 12px;
+  color: var(--panel-mute);
 }
 .tpl button i {
   display: block;
@@ -357,11 +322,132 @@ footer a:hover {
   border: 1.5px solid var(--purple);
   border-radius: 3px;
 }
+.tpl button[aria-pressed="true"] {
+  border-color: var(--purple);
+  box-shadow: inset 0 0 0 1px var(--purple);
+  background: #f3eeff;
+}
 .tpl button[aria-pressed="true"] i {
   background: var(--purple);
 }
 
-/* ---------- Layers panel: add buttons, rename, footer avatar ---------- */
+/* ---------- Preview details (status chips + note) ---------- */
+#status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.chip {
+  padding: 2px 9px;
+  border-radius: 99px;
+  border: 1px solid currentColor;
+  font-size: 12px;
+}
+.ok {
+  color: #0d6a4a;
+}
+.warn {
+  color: #8a5200;
+}
+.bad {
+  color: #b3261e;
+}
+.idle {
+  color: var(--panel-mute);
+}
+.note {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--panel-mute);
+}
+
+/* ---------- Preview ---------- */
+.preview {
+  border: 1.5px dashed #2e3440;
+  border-radius: 14px;
+  padding: 14px;
+}
+.stage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  height: min(60vh, 640px);
+  min-height: 260px;
+}
+canvas {
+  max-width: 100%;
+  border-radius: 6px;
+  cursor: grab;
+  touch-action: none;
+  background: repeating-conic-gradient(#c9ccd3 0 25%, #e6e8ec 0 50%) 0 0/16px
+    16px;
+}
+.hint {
+  color: var(--mute);
+  font-size: 13px;
+  text-align: center;
+  margin: 8px 0;
+}
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 8px;
+}
+.timeline .btn {
+  margin: 0;
+  white-space: nowrap;
+}
+.timeline input[type="range"] {
+  flex: 1;
+}
+#tnow {
+  font-variant-numeric: tabular-nums;
+  color: var(--mute);
+  font-size: 13px;
+  white-space: nowrap;
+}
+/* hidden timeline/options keep their space, so the canvas never changes size between templates */
+.timeline[hidden],
+.tlopts[hidden] {
+  display: flex !important;
+  visibility: hidden;
+}
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.tlopts {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  color: var(--mute);
+  font-size: 13px;
+}
+.tlopts label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tlopts input[type="number"] {
+  width: 70px;
+}
+.tlopts select {
+  width: auto;
+}
+.btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---------- Layers panel ---------- */
 .addrow {
   display: flex;
   gap: 8px;
@@ -382,11 +468,39 @@ footer a:hover {
   outline-offset: -4px;
   background: #f3eeff;
 }
+/* long layer lists scroll on their own, so the properties below stay in view */
+#layers {
+  flex: none; /* never squash the list to nothing; the panel scrolls instead */
+  max-height: min(34vh, 320px);
+  overflow-y: auto;
+  padding-right: 2px;
+}
+.layer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+.layer.sel {
+  border-color: var(--purple);
+  box-shadow: inset 0 0 0 1px var(--purple);
+}
 .layer em {
   font-style: normal;
   width: 18px;
   text-align: center;
   flex: none;
+}
+.layer button {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 6px;
+  padding: 1px 7px;
+  cursor: pointer;
 }
 .lname {
   flex: 1;
@@ -404,76 +518,20 @@ footer a:hover {
   border-color: var(--line);
   background: #fff;
 }
-footer .made {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-left: 0;
-}
-.made img {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex: none;
-}
-
-/* ---------- Timeline + timing ---------- */
-.timeline {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 4px 0 10px;
-}
-.timeline .btn {
-  margin: 0;
-  white-space: nowrap;
-}
-.timeline input[type="range"] {
-  flex: 1;
-  accent-color: var(--purple);
-}
-#tnow {
-  font-variant-numeric: tabular-nums;
-  color: var(--mute);
-  font-size: 13px;
-  white-space: nowrap;
-}
-.tlopts {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  color: var(--mute);
-  font-size: 13px;
+#props {
   margin-bottom: 14px;
 }
-.tlopts label {
+#props label {
+  display: block;
+  font-size: 12.5px;
+  color: var(--panel-mute);
+  margin: 10px 0 4px;
+}
+#props .row {
   display: flex;
-  align-items: center;
   gap: 6px;
-}
-.tlopts input[type="number"] {
-  width: 70px;
-}
-.btns {
-  display: flex;
-  gap: 8px;
-}
-input[type="number"] {
-  padding: 6px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  font: inherit;
-  color: var(--panel-ink);
-  background: #fff;
-  width: 100%;
-}
-.tlopts input[type="number"] {
-  width: 70px;
-}
-.tlopts select,
-.tlopts input[type="color"] {
-  width: auto;
+  flex-wrap: wrap;
+  margin-top: 10px;
 }
 .timing {
   margin-top: 14px;
@@ -490,10 +548,65 @@ input[type="number"] {
   gap: 0 10px;
 }
 
-/* ---------- GIF / MP4 support badges ---------- */
-[hidden] {
-  display: none !important;
+/* canvas options: background, safe margin, platform labels */
+.canvasopts {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid #e3e4e8;
 }
+.canvasopts h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+.check {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--panel-ink);
+  font-size: 13.5px;
+}
+.bgrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 4px;
+}
+.bgrow input[type="color"] {
+  width: 40px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: none;
+  cursor: pointer;
+}
+.bgrow input[type="color"]:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.bgrow code {
+  font:
+    13px ui-monospace,
+    Consolas,
+    monospace;
+  color: var(--panel-ink);
+  min-width: 5.5em;
+}
+#bgNote {
+  display: block;
+  min-height: 1.2em;
+  margin-bottom: 8px;
+  color: var(--panel-mute);
+  font-size: 12px;
+}
+.checks {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* ---------- GIF / MP4 badges ---------- */
 .gt {
   text-decoration: none;
   font-size: 11px;
@@ -514,95 +627,38 @@ input[type="number"] {
   background: #e3dcf7;
   color: #4b2a99;
 }
-#animnote {
-  margin: 0 0 12px;
-}
-.checks {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.btns {
-  flex-wrap: wrap;
-}
-.actions {
-  flex-wrap: wrap;
-  gap: 10px;
-}
 
-/* ---------- Background control ---------- */
-.bgrow {
+/* ---------- Footer ---------- */
+footer {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin: 0 0 12px;
-}
-.bgrow input[type="color"] {
-  width: 40px;
-  height: 28px;
-  padding: 0;
-  border: 1px solid #3a4150;
-  border-radius: 6px;
-  background: none;
-  cursor: pointer;
-}
-.bgrow input[type="color"]:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-.bgrow code {
-  font:
-    13px ui-monospace,
-    Consolas,
-    monospace;
-  color: var(--text);
-  min-width: 5.5em;
-}
-.bgrow small {
+  margin-top: 36px;
+  padding-top: 20px;
+  border-top: 1px solid #fff;
   color: var(--mute);
-  font-size: 12px;
 }
-
-/* ---------- Stable layout: no sideways growth, constant height ---------- */
-html {
-  scrollbar-gutter: stable;
+footer a {
+  color: var(--mute);
+  text-decoration: none;
+  margin-left: 22px;
 }
-
-/* template list: fixed row height so the reserved space is exact */
-.tpl {
-  align-content: start;
+footer a:hover {
+  color: #fff;
 }
-.tpl button {
-  height: 46px;
-}
-
-/* preview: reserve the biggest state of every block */
-.stage {
-  min-height: 340px; /* canvas decides the height; this only stops wide banners collapsing */
+footer .made {
+  display: flex;
   align-items: center;
+  gap: 10px;
+  margin-left: 0;
 }
-#status {
-  min-height: 94px;
-  align-content: flex-start;
+.made img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
 }
-#animnote {
-  min-height: 4.4em;
-}
-.timeline[hidden],
-.tlopts[hidden] {
-  display: flex !important;
-  visibility: hidden;
-}
-.btns {
-  min-height: 88px;
-  align-content: flex-start;
-}
-.actions {
-  align-items: flex-start;
-}
-
-/* ---------- Footer link icons ---------- */
 footer .links a {
   display: inline-flex;
   align-items: center;
@@ -615,135 +671,16 @@ footer .links a {
   flex: none;
 }
 
-/* ---------- Expanded view: the same three columns, filling the window ---------- */
-.pvhead {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 2px;
-}
-.pvhead .btn {
-  margin: 0;
-}
-
-body.focus {
-  overflow: hidden;
-}
-body.focus .cols {
-  position: fixed;
-  inset: 0 0 56px 0; /* leaves room for the footer */
-  z-index: 50;
-  padding: 16px;
-  gap: 16px;
-  background: var(--card);
-  grid-template-rows: minmax(0, 1fr);
-}
-/* each column scrolls on its own */
-body.focus .cols > * {
-  overflow-y: auto;
-}
-body.focus footer {
-  position: fixed;
-  inset: auto 0 0 0;
-  z-index: 60;
-  margin: 0;
-  padding: 12px 24px;
-  background: var(--card);
-}
-body.focus .preview {
-  border: 0;
-  min-height: 0;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-body.focus .stage {
-  min-height: 0;
-}
-body.focus canvas {
-  max-height: none;
-}
-/* medium/small screens: expanded view is one scrolling sheet */
-@media (max-width: 1180px) {
-  body.focus .cols {
-    overflow-y: auto;
-    align-content: start;
-    grid-template-rows: none;
-  }
-  body.focus .cols > * {
-    overflow: visible;
-  }
-}
-
-/* ---------- Embedded view (iframe, e.g. itch.io): fits the frame, title + footer stay visible ---------- */
-body.embed {
-  --side: 300px;
-  overflow: hidden;
-}
-body.embed .page {
-  max-width: none;
-  height: 100vh;
-  min-height: 0;
-  padding: 8px;
-}
-body.embed .card {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: 12px 16px 10px;
-}
-/* the itch.io banner already shows the title */
+/* ---------- Embedded in a frame (e.g. itch.io): the banner already shows the title ---------- */
 body.embed h1,
 body.embed .sub {
   display: none;
 }
-body.embed .cols {
-  flex: 1;
-  min-height: 0;
-  grid-template-rows: minmax(0, 1fr);
-}
-/* each column scrolls on its own */
-body.embed .cols > * {
-  overflow-y: auto;
-}
-body.embed .preview {
-  border: 0;
-  min-height: 0;
-}
-body.embed .pvhead {
-  display: none;
-}
-body.embed .stage {
-  min-height: 0;
-}
-body.embed canvas {
-  max-height: none;
-}
-/* drop the reserved empty space: every pixel counts in a frame */
-body.embed #status,
-body.embed #animnote,
-body.embed .btns {
-  min-height: 0;
-}
-body.embed footer {
-  flex: none;
-  margin-top: 12px;
-  padding-top: 10px;
-}
 
-/* ---------- Scrolling polish ---------- */
-/* long layer lists scroll on their own, so the properties below stay in view */
-#layers {
-  max-height: min(34vh, 320px);
-  overflow-y: auto;
-  padding-right: 2px;
-}
-/* slimmer scrollbars on every scrolling area */
+/* ---------- Slimmer scrollbars ---------- */
 .cols > *,
-#layers {
+#layers,
+.tpl {
   scrollbar-width: thin;
   scrollbar-color: #9aa0ad transparent;
-}
-/* no reserved scrollbar strip when the page itself never scrolls */
-html:has(body.embed),
-html:has(body.focus) {
-  scrollbar-gutter: auto;
 }

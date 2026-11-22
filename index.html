@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Social Template Fit</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css?v=3" />
   </head>
   <body>
     <div class="page">
@@ -16,27 +16,29 @@
         </p>
 
         <div class="cols">
-          <!-- Left: template picker -->
-          <div class="panel" id="tplPanel">
-            <h2>Template</h2>
-            <div
-              class="tabs"
-              id="platform"
-              role="group"
-              aria-label="Platform"
-            ></div>
-            <div class="tpl" id="templates"></div>
+          <!-- Left: template picker + preview details -->
+          <div class="col-left">
+            <div class="panel" id="tplPanel">
+              <h2>Template</h2>
+              <div
+                class="tabs"
+                id="platform"
+                role="group"
+                aria-label="Platform"
+              ></div>
+              <div class="tpl" id="templates"></div>
+            </div>
+
+            <div class="panel" id="detailsPanel">
+              <h2>Preview details</h2>
+              <div id="status"></div>
+              <p class="note" id="animnote"></p>
+            </div>
           </div>
 
           <!-- Centre: preview -->
           <div class="center">
             <div class="preview">
-              <div class="pvhead">
-                <button class="btn small" id="focus" type="button">
-                  ⤢ Expand
-                </button>
-              </div>
-              <div id="status"></div>
               <div class="stage">
                 <canvas id="cv" aria-label="Design canvas"></canvas>
               </div>
@@ -44,19 +46,6 @@
                 Drag a layer to move it. Drag a corner handle or scroll to
                 resize.
               </p>
-              <div class="bgrow">
-                <label class="check"
-                  ><input type="checkbox" id="bgOn" /> Background</label
-                >
-                <input
-                  type="color"
-                  id="bg"
-                  value="#ffffff"
-                  aria-label="Background colour"
-                />
-                <code id="bgHex">#FFFFFF</code>
-                <small id="bgNote"></small>
-              </div>
               <div class="timeline">
                 <button class="btn small" id="play">▶ Play</button>
                 <input
@@ -70,38 +59,29 @@
                 />
                 <span id="tnow">0.00 / 3.00s</span>
               </div>
-              <div class="tlopts">
-                <label
-                  >Length
-                  <input
-                    type="number"
-                    id="dur"
-                    min="0.5"
-                    max="30"
-                    step="0.01"
-                    value="3"
-                  />
-                  s</label
-                >
-                <label
-                  >FPS
-                  <select id="fps">
-                    <option>10</option>
-                    <option selected>15</option>
-                    <option>20</option>
-                  </select></label
-                >
-              </div>
-              <p class="hint" id="animnote"></p>
               <div class="actions">
-                <span class="checks"
-                  ><label class="check"
-                    ><input type="checkbox" id="guides" /> Safe margin</label
-                  ><label class="check" id="zonesLbl"
-                    ><input type="checkbox" id="zones" checked /> Platform
-                    labels</label
-                  ></span
-                >
+                <div class="tlopts">
+                  <label
+                    >Length
+                    <input
+                      type="number"
+                      id="dur"
+                      min="0.5"
+                      max="30"
+                      step="0.01"
+                      value="3"
+                    />
+                    s</label
+                  >
+                  <label
+                    >FPS
+                    <select id="fps">
+                      <option>10</option>
+                      <option selected>15</option>
+                      <option>20</option>
+                    </select></label
+                  >
+                </div>
                 <span class="btns"
                   ><button class="btn" id="dl">Download PNG</button
                   ><button class="btn" id="dlgif">Download GIF</button
@@ -111,7 +91,7 @@
             </div>
           </div>
 
-          <!-- Right: layers + properties -->
+          <!-- Right: layers, properties, canvas options -->
           <div class="panel" id="drop">
             <h2>Layers</h2>
             <div class="addrow">
@@ -132,6 +112,32 @@
             </p>
             <div id="layers"></div>
             <div id="props"></div>
+
+            <div class="canvasopts">
+              <h3>Canvas</h3>
+              <div class="bgrow">
+                <label class="check"
+                  ><input type="checkbox" id="bgOn" /> Background</label
+                >
+                <input
+                  type="color"
+                  id="bg"
+                  value="#ffffff"
+                  aria-label="Background colour"
+                />
+                <code id="bgHex">#FFFFFF</code>
+              </div>
+              <small id="bgNote"></small>
+              <div class="checks">
+                <label class="check"
+                  ><input type="checkbox" id="guides" /> Safe margin</label
+                >
+                <label class="check" id="zonesLbl"
+                  ><input type="checkbox" id="zones" checked /> Platform
+                  labels</label
+                >
+              </div>
+            </div>
           </div>
         </div>
 
@@ -176,7 +182,7 @@
         </footer>
       </div>
     </div>
-    <script src="templates.js"></script>
-    <script src="script.js"></script>
+    <script src="templates.js?v=3"></script>
+    <script src="script.js?v=3"></script>
   </body>
 </html>

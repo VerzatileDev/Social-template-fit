@@ -32,11 +32,6 @@ const $ = (id) =>
 const cv = $("cv"),
   ctx = cv.getContext("2d");
 
-// most templates any platform has: keeps the template list a constant height
-const MAX_TPL = Math.max(
-  ...Object.values(PLATFORMS).map((p) => p.templates.length),
-);
-
 let plat, tpl;
 {
   const [p, n] = DEFAULT_TEMPLATE;
@@ -97,7 +92,6 @@ function renderTpl() {
   renderTabs();
   const box = $("templates");
   box.innerHTML = "";
-  box.style.minHeight = `calc(${MAX_TPL} * 46px + ${MAX_TPL - 1} * 6px)`;
   PLATFORMS[plat].templates.forEach((t) => {
     const b = document.createElement("button");
     b.setAttribute("aria-pressed", t === tpl);
@@ -126,22 +120,17 @@ function pick(t) {
   status();
   fitView(); // last, so it measures the final controls height
 }
+// The stage's size comes from the CSS layout (it never depends on the canvas),
+// so the canvas simply scales to fit inside it.
 function fitView() {
-  const cls = document.body.classList;
   const stage = cv.parentElement;
-  let maxH = innerHeight * 0.62;
-  if (cls.contains("focus")) maxH = Math.max(200, innerHeight - 340);
-  else if (cls.contains("embed")) {
-    // embedded: use whatever height the centre column has left after the controls
-    const pv = stage.closest(".preview");
-    const chrome = pv.offsetHeight - stage.offsetHeight;
-    maxH = Math.max(200, pv.parentElement.clientHeight - chrome - 8);
-  }
-  const maxW = Math.max(100, stage.clientWidth);
+  const maxW = Math.max(100, stage.clientWidth),
+    maxH = Math.max(100, stage.clientHeight);
   const k = Math.min(maxW / W, maxH / H, 3);
   cv.style.width = W * k + "px";
   cv.style.height = H * k + "px";
 }
+new ResizeObserver(fitView).observe(cv.parentElement); // window resize, layout changes
 
 /* ---------- Layers ---------- */
 /* ---------- Video layers (MP4 / WebM / MOV) ----------
@@ -761,8 +750,6 @@ $("dl").onclick = () =>
     }
   });
 
-addEventListener("resize", fitView);
-
 /* ================= Animation: GIF decoding, timeline, effects, GIF export ================= */
 async function decodeGif(file) {
   const dec = new ImageDecoder({
@@ -1246,30 +1233,10 @@ function halo(x, y, w, h, lw, dash, col) {
   ctx.restore();
 }
 
-/* ---------- Expanded view: preview fills the window, panels float on the left ---------- */
-function setFocus(on) {
-  document.body.classList.toggle("focus", on);
-  const fb = $("focus");
-  if (fb) fb.textContent = on ? "✕ Exit expanded view" : "⤢ Expand";
-  fitView();
-  draw();
-}
-if ($("focus"))
-  $("focus").onclick = () =>
-    setFocus(!document.body.classList.contains("focus"));
-addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && document.body.classList.contains("focus"))
-    setFocus(false);
-});
-
 /* ---------- Start ---------- */
 pick(tpl);
 ui();
 syncBg();
 
-/* ---------- Embedded (iframe, e.g. itch.io): fill the frame, keep title + footer ---------- */
-if (window.self !== window.top && innerWidth > 1180) {
-  document.body.classList.add("embed");
-  fitView();
-  draw();
-}
+/* ---------- Embedded in a frame (e.g. itch.io): the CSS hides the title ---------- */
+if (window.self !== window.top) document.body.classList.add("embed");
