@@ -485,8 +485,8 @@ const PLATFORMS = {
     templates: [
       {
         name: "Cover image",
-        w: 630,
-        h: 500,
+        w: 1920,
+        h: 1524,
         gif: "GifS",
         zones: [{ label: "GIF label", x: 0.01, y: 0.02, w: 0.14, h: 0.11 }],
       },
