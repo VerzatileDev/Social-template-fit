@@ -623,17 +623,67 @@ footer .links a {
   flex: none;
 }
 
+/* ---------- Expanded view ---------- */
+.pvhead {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 2px;
+}
+.pvhead .btn {
+  margin: 0;
+}
+
+body.focus {
+  overflow: hidden;
+}
+body.focus .right {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--card);
+  padding: 16px 16px 16px 392px;
+  overflow-y: auto;
+}
+body.focus .preview {
+  border: 0;
+  min-height: 0;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+body.focus .stage {
+  min-height: 0;
+}
+body.focus canvas {
+  max-height: none;
+}
+body.focus .left {
+  position: fixed;
+  z-index: 60;
+  top: 16px;
+  left: 16px;
+  bottom: 16px;
+  width: 360px;
+  contain: none;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+body.focus #drop {
+  flex: none;
+  overflow: visible;
+}
+
 @media (max-width: 860px) {
-  .cols {
-    grid-template-columns: minmax(0, 1fr);
+  body.focus .right {
+    padding: 16px 16px 46vh;
   }
-  .left {
-    contain: none;
-  }
-  #drop {
-    overflow: visible;
-  }
-  .stage {
-    min-height: 0;
+  body.focus .left {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: 44vh;
+    padding: 10px;
+    background: var(--card);
   }
 }

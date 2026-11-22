@@ -2,16 +2,19 @@
    support: "yes" = animates, "maybe" = unreliable / sources disagree, "no" = shown as a still image */
 const PLATFORMS = {
   Facebook: [
-    ["Page banner", 820, 312, "no"],
-    ["Event banner", 1920, 1005, "no"],
-    ["Post", 1200, 630, "maybe"],
-    ["Link post", 1200, 628, "no"],
-    ["Story", 1080, 1920, "no"],
+    ["Page cover photo 2.62:1", 1640, 642, "no"],
+    ["Event cover photo 1.91:1", 1920, 1005, "no"],
+    ["Profile image 1:1", 1200, 1200, "no"],
+    ["Square post 1:1", 1440, 1440, "maybe"],
+    ["Portrait post 4:5", 1440, 1800, "maybe"],
+    ["Landscape post 16:9", 1092, 1080, "maybe"],
+    ["Shared Link preview 1.91:1", 1200, 630, "no"],
+    ["Story / Reel 9:16", 1440, 2560, "no"],
   ],
   Instagram: [
-    ["Square post", 1080, 1080, "no"],
-    ["Portrait post", 1080, 1350, "no"],
-    ["Story / Reel", 1080, 1920, "no"],
+    ["Square post 1:1", 1080, 1080, "no"],
+    ["Portrait post 4:5", 1080, 1350, "no"],
+    ["Story / Reel 9:16", 1080, 1920, "no"],
   ],
   "X / Twitter": [
     ["Header", 1500, 500, "no"],
@@ -51,25 +54,24 @@ const PLATFORMS = {
   // 5th value (optional) = overlay zones the platform covers: [label, x, y, width, height] as fractions of the image
   "itch.io": [
     ["Cover image", 630, 500, "yes", [["GIF label", 0.01, 0.02, 0.14, 0.11]]],
-    ["Header image", 960, 400, "no"],
-    ["Screenshot 16:9", 1920, 1080, "maybe"],
-    ["Screenshot 4:3", 1200, 900, "maybe"],
-    ["Screenshot 3:4 (portrait)", 900, 1200, "maybe"],
-    ["Screenshot 1:1", 800, 800, "maybe"],
-    ["Page banner", 2048, 880, "maybe"],
-    ["Wide cover (21:9)", 2100, 900, "no"],
+    ["Header image", 960, 400, "maybe"],
+    ["Screenshot 16:9", 1920, 1080, "yes"],
+    ["Screenshot 4:3", 1200, 900, "yes"],
+    ["Screenshot 3:4 (portrait)", 900, 1200, "yes"],
+    ["Screenshot 1:1", 800, 800, "yes"],
+    ["Page banner", 2048, 880, "yes"],
+    ["Metadata Wide cover (21:9)", 2100, 900, "no"],
     [
-      "Social media image",
+      "Metadata Social media image",
       1200,
       630,
-      "no",
+      "maybe",
       [
         ["May crop", 0, 0, 0.2417, 1],
         ["May crop", 0.7583, 0, 0.2417, 1],
       ],
     ],
-    ["Logo (transparent PNG)", 1000, 500, "no"],
-    ["Favicon", 192, 192, "no"],
+    ["Profile /Metadata favicon", 500, 500, "no"],
   ],
   "Unity Asset Store": [
     ["Icon", 160, 160, "no"],
@@ -79,7 +81,7 @@ const PLATFORMS = {
   ],
   "Epic / Fab": [["Gallery image", 1920, 1080, "no"]],
 };
-
+// most templates any platform has: used to keep the template list a constant height
 const MAX_TPL = Math.max(...Object.values(PLATFORMS).map((a) => a.length));
 
 const $ = (id) =>
@@ -129,6 +131,7 @@ function renderTpl() {
   });
 }
 function pick(t) {
+  lastExport = null;
   tpl = t;
   W = t[1];
   H = t[2];
@@ -147,8 +150,9 @@ function pick(t) {
   status();
 }
 function fitView() {
+  const f = document.body.classList.contains("focus");
   const maxW = Math.max(100, cv.parentElement.clientWidth),
-    maxH = innerHeight * 0.62;
+    maxH = f ? Math.max(200, innerHeight - 340) : innerHeight * 0.62;
   const k = Math.min(maxW / W, maxH / H, 3);
   cv.style.width = W * k + "px";
   cv.style.height = H * k + "px";
@@ -291,6 +295,23 @@ function draw(forExport) {
   }
 }
 
+/* ---------- File size limits (MB) per platform ---------- */
+const MAX_MB = { "itch.io": 3 };
+let lastExport = null; // { kind, bytes, plat, note, blocked }
+const mb = (b) => (b / 1048576).toFixed(2);
+const maxBytes = () => (MAX_MB[plat] ? MAX_MB[plat] * 1048576 : Infinity);
+function noteExport(kind, blob, extra) {
+  lastExport = { kind, bytes: blob.size, plat, ...extra };
+  status();
+}
+function saveBlob(blob, name) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name.replace(/[\s\/]+/g, "-");
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
 /* ---------- Fit check ---------- */
 function status() {
   const chips = [
@@ -339,6 +360,19 @@ function status() {
       `<span class="chip warn">GIF shown as a still: use Chrome, Edge or Safari to preview it</span>`,
     );
   chips.push(`<span class="chip idle">Animation ${D.toFixed(2)}s</span>`);
+  const lim = MAX_MB[plat];
+  if (lim) chips.push(`<span class="chip idle">Max ${lim} MB</span>`);
+  if (lastExport && lastExport.plat === plat) {
+    const x = lastExport;
+    if (x.blocked)
+      chips.push(
+        `<span class="chip bad">Not downloaded: ${x.kind} is still ${mb(x.bytes)} MB after shrinking, over the ${lim} MB limit. Try a shorter length or a simpler image</span>`,
+      );
+    else
+      chips.push(
+        `<span class="chip ok">Last ${x.kind}: ${mb(x.bytes)} MB${x.note ? " · reduced to fit: " + x.note : ""}</span>`,
+      );
+  }
   $("status").innerHTML = chips.join("");
 }
 
@@ -573,7 +607,7 @@ cv.addEventListener(
   { passive: false },
 );
 
-/* ---------- Buttons, drop zone, download ---------- */
+/* ---------- Buttons, drop zone ---------- */
 $("choose").onclick = () => $("file").click();
 $("file").onchange = (e) => {
   [...e.target.files].forEach(addImage);
@@ -603,16 +637,84 @@ addEventListener("drop", (e) => {
     .forEach(addImage);
 });
 
-$("dl").onclick = () => {
-  draw(true);
-  cv.toBlob((b) => {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(b);
-    a.download = `${plat}-${tpl[0]}-${W}x${H}.png`.replace(/[\s\/]+/g, "-");
-    a.click();
-    URL.revokeObjectURL(a.href);
-    draw();
-  }, "image/png");
+/* ---------- Still image export (PNG, auto-reduced when a size limit applies) ----------
+   Over the limit: opaque images are converted to JPG (full size first, then smaller);
+   images with transparency stay PNG and are scaled down. Nothing is downloaded if it still doesn't fit. */
+function stillBlob(s, type, q) {
+  const w = Math.max(1, Math.round(W * s)),
+    h = Math.max(1, Math.round(H * s));
+  const off = document.createElement("canvas");
+  off.width = w;
+  off.height = h;
+  const oc = off.getContext("2d");
+  oc.imageSmoothingQuality = "high";
+  if (type === "image/jpeg") {
+    oc.fillStyle = exportBg();
+    oc.fillRect(0, 0, w, h);
+  }
+  oc.drawImage(cv, 0, 0, w, h);
+  return new Promise((res) =>
+    off.toBlob((blob) => res({ blob, w, h }), type, q),
+  );
+}
+function isOpaque() {
+  if ($("bgOn").checked) return true;
+  const d = ctx.getImageData(0, 0, W, H).data;
+  for (let i = 3; i < d.length; i += 4) if (d[i] < 255) return false;
+  return true;
+}
+
+$("dl").onclick = async () => {
+  const btn = $("dl"),
+    txt = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Working…";
+  try {
+    draw(true);
+    const max = maxBytes();
+    let r = await stillBlob(1, "image/png"),
+      kind = "PNG",
+      ext = "png",
+      note = "";
+    if (r.blob.size > max) {
+      const tries = isOpaque()
+        ? [
+            [1, 0.92],
+            [1, 0.85],
+            [1, 0.75],
+            [1, 0.65],
+            [1, 0.5],
+            [0.85, 0.75],
+            [0.7, 0.75],
+            [0.55, 0.75],
+          ].map(([s, q]) => ({ s, q, type: "image/jpeg" }))
+        : [0.9, 0.8, 0.7, 0.6, 0.5].map((s) => ({ s, type: "image/png" }));
+      for (const t of tries) {
+        r = await stillBlob(t.s, t.type, t.q);
+        if (r.blob.size <= max) {
+          if (t.type === "image/jpeg") {
+            kind = "JPG";
+            ext = "jpg";
+            note = `converted to JPG at ${Math.round(t.q * 100)}% quality`;
+          } else note = "PNG";
+          if (t.s < 1)
+            note += `${note ? ", " : ""}${Math.round(t.s * 100)}% size (${r.w}×${r.h})`;
+          break;
+        }
+      }
+    }
+    if (r.blob.size > max) {
+      noteExport(kind, r.blob, { blocked: true });
+    } else {
+      noteExport(kind, r.blob, { note });
+      saveBlob(r.blob, `${plat}-${tpl[0]}-${r.w}x${r.h}.${ext}`);
+    }
+  } catch (err) {
+    alert("Could not create the image: " + err.message);
+  }
+  btn.textContent = txt;
+  btn.disabled = false;
+  draw();
 };
 
 addEventListener("resize", fitView);
@@ -748,6 +850,39 @@ $("dur").onchange = (e) => {
   status();
 };
 
+/* ---------- GIF export (auto-reduced when a size limit applies) ----------
+   Each step is tried in order until the file fits: fewer colours, then lower FPS, then smaller size.
+   Nothing is downloaded if the last step is still too big. */
+async function encodeGif(gifenc, { s, fps, c }, label) {
+  const { GIFEncoder, quantize, applyPalette } = gifenc;
+  const w = Math.max(1, Math.round(W * s)),
+    h = Math.max(1, Math.round(H * s)),
+    n = Math.max(1, Math.round(D * fps)),
+    gif = GIFEncoder();
+  const off = document.createElement("canvas");
+  off.width = w;
+  off.height = h;
+  const oc = off.getContext("2d", { willReadFrequently: true });
+  oc.imageSmoothingQuality = "high";
+  for (let i = 0; i < n; i++) {
+    T = i / fps;
+    draw(true);
+    oc.fillStyle = exportBg();
+    oc.fillRect(0, 0, w, h);
+    oc.drawImage(cv, 0, 0, w, h);
+    const { data } = oc.getImageData(0, 0, w, h),
+      palette = quantize(data, c);
+    gif.writeFrame(applyPalette(data, palette), w, h, {
+      palette,
+      delay: 1000 / fps,
+    });
+    $("dlgif").textContent = `${label} · ${i + 1}/${n}`;
+    await new Promise((r) => setTimeout(r));
+  }
+  gif.finish();
+  return { blob: new Blob([gif.bytes()], { type: "image/gif" }), w, h };
+}
+
 $("dlgif").onclick = async () => {
   const btn = $("dlgif"),
     txt = btn.textContent,
@@ -757,38 +892,41 @@ $("dlgif").onclick = async () => {
   setPlay(false);
   try {
     btn.textContent = "Loading encoder…";
-    const { GIFEncoder, quantize, applyPalette } =
-      await import("https://unpkg.com/gifenc@1.0.3");
-    const fps = +$("fps").value,
-      n = Math.max(1, Math.round(D * fps)),
-      gif = GIFEncoder();
-    const off = document.createElement("canvas");
-    off.width = W;
-    off.height = H;
-    const oc = off.getContext("2d", { willReadFrequently: true });
-    for (let i = 0; i < n; i++) {
-      T = i / fps;
-      draw(true);
-      oc.fillStyle = exportBg();
-      oc.fillRect(0, 0, W, H);
-      oc.drawImage(cv, 0, 0);
-      const { data } = oc.getImageData(0, 0, W, H),
-        palette = quantize(data, 256);
-      gif.writeFrame(applyPalette(data, palette), W, H, {
-        palette,
-        delay: 1000 / fps,
-      });
-      btn.textContent = `Encoding ${i + 1}/${n}`;
-      await new Promise((r) => setTimeout(r));
+    const gifenc = await import("https://unpkg.com/gifenc@1.0.3");
+    const max = maxBytes(),
+      f = +$("fps").value,
+      slow = Math.max(5, Math.round(f * 0.67));
+    const ladder = [
+      { s: 1, fps: f, c: 256 },
+      { s: 1, fps: f, c: 128 },
+      { s: 1, fps: f, c: 64 },
+      { s: 1, fps: slow, c: 64 },
+      { s: 0.85, fps: slow, c: 64 },
+      { s: 0.7, fps: slow, c: 64 },
+      { s: 0.55, fps: slow, c: 64 },
+    ];
+    const tries = max === Infinity ? ladder.slice(0, 1) : ladder;
+    let best = null;
+    for (let i = 0; i < tries.length; i++) {
+      const r = await encodeGif(
+        gifenc,
+        tries[i],
+        tries.length > 1 ? `Try ${i + 1}/${tries.length}` : "Encoding",
+      );
+      best = { ...r, t: tries[i] };
+      if (r.blob.size <= max) break;
     }
-    gif.finish();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(
-      new Blob([gif.bytes()], { type: "image/gif" }),
-    );
-    a.download = `${plat}-${tpl[0]}-${W}x${H}.gif`.replace(/[\s\/]+/g, "-");
-    a.click();
-    URL.revokeObjectURL(a.href);
+    if (best.blob.size > max) {
+      noteExport("GIF", best.blob, { blocked: true });
+    } else {
+      const parts = [];
+      if (best.t.c < 256) parts.push(`${best.t.c} colours`);
+      if (best.t.fps !== f) parts.push(`${best.t.fps} fps`);
+      if (best.t.s < 1)
+        parts.push(`${Math.round(best.t.s * 100)}% size (${best.w}×${best.h})`);
+      noteExport("GIF", best.blob, { note: parts.join(", ") });
+      saveBlob(best.blob, `${plat}-${tpl[0]}-${best.w}x${best.h}.gif`);
+    }
   } catch (err) {
     alert("Could not create the GIF: " + err.message);
   }
@@ -840,12 +978,11 @@ function animChip() {
     : `<span class="chip idle">Still image only</span>`;
 }
 
-/* ---------- Platform overlay zones (e.g. itch.io "Sale" and "GIF" labels) ---------- */
+/* ---------- Platform overlay zones (e.g. itch.io GIF label, social image crop areas) ---------- */
 function drawZones(lw) {
   const z = tpl[4];
   if (!z || !$("zones").checked) return;
   ctx.save();
-  ctx.font = `600 ${Math.max(11, H / 30)}px system-ui,sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   z.forEach(([name, x, y, w, h]) => {
@@ -853,15 +990,29 @@ function drawZones(lw) {
       ry = y * H,
       rw = w * W,
       rh = h * H;
-    ctx.fillStyle = "rgba(255,45,111,.28)";
+    const tall = rh > rw * 1.5;
+    ctx.fillStyle = "rgba(255,45,111,.38)";
     ctx.fillRect(rx, ry, rw, rh);
     halo(rx, ry, rw, rh, lw, [lw * 4, lw * 3], "#ff2d6f");
-    ctx.setLineDash([]);
+    ctx.save();
+    ctx.translate(rx + rw / 2, ry + rh / 2);
+    let fs, max;
+    if (tall) {
+      ctx.rotate(-Math.PI / 2);
+      fs = Math.max(11, Math.min(rw * 0.28, H / 14));
+      max = rh - 8;
+    } else {
+      fs = Math.max(11, H / 30);
+      max = rw - 4;
+    }
+    ctx.font = `700 ${fs}px system-ui,sans-serif`;
     ctx.lineWidth = lw * 1.5;
     ctx.strokeStyle = "rgba(0,0,0,.6)";
-    ctx.strokeText(name, rx + rw / 2, ry + rh / 2, rw - 4);
+    ctx.lineJoin = "round";
+    ctx.strokeText(name, 0, 0, max);
     ctx.fillStyle = "#fff";
-    ctx.fillText(name, rx + rw / 2, ry + rh / 2, rw - 4);
+    ctx.fillText(name, 0, 0, max);
+    ctx.restore();
   });
   ctx.restore();
 }
@@ -948,13 +1099,10 @@ $("dlmp4").onclick = async () => {
     await enc.flush();
     if (encErr) throw encErr;
     muxer.finalize();
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(
+    saveBlob(
       new Blob([muxer.target.buffer], { type: "video/mp4" }),
+      `${plat}-${tpl[0]}-${W}x${H}.mp4`,
     );
-    a.download = `${plat}-${tpl[0]}-${W}x${H}.mp4`.replace(/[\s\/]+/g, "-");
-    a.click();
-    URL.revokeObjectURL(a.href);
   } catch (err) {
     alert("Could not create the MP4: " + err.message);
   }
@@ -1026,6 +1174,22 @@ function halo(x, y, w, h, lw, dash, col) {
   ctx.strokeRect(x, y, w, h);
   ctx.restore();
 }
+
+/* ---------- Expanded view: preview fills the window, panels float on the left ---------- */
+function setFocus(on) {
+  document.body.classList.toggle("focus", on);
+  const fb = $("focus");
+  if (fb) fb.textContent = on ? "✕ Exit expanded view" : "⤢ Expand";
+  fitView();
+  draw();
+}
+if ($("focus"))
+  $("focus").onclick = () =>
+    setFocus(!document.body.classList.contains("focus"));
+addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && document.body.classList.contains("focus"))
+    setFocus(false);
+});
 
 /* ---------- Start ---------- */
 pick(tpl);
