@@ -51,12 +51,25 @@ const PLATFORMS = {
   // 5th value (optional) = overlay zones the platform covers: [label, x, y, width, height] as fractions of the image
   "itch.io": [
     ["Cover image", 630, 500, "yes", [["GIF label", 0.01, 0.02, 0.14, 0.11]]],
-    ["Screenshot", 1920, 1080, "maybe"],
+    ["Header image", 960, 400, "no"],
+    ["Screenshot 16:9", 1920, 1080, "maybe"],
+    ["Screenshot 4:3", 1200, 900, "maybe"],
+    ["Screenshot 3:4 (portrait)", 900, 1200, "maybe"],
+    ["Screenshot 1:1", 800, 800, "maybe"],
     ["Page banner", 2048, 880, "maybe"],
     ["Wide cover (21:9)", 2100, 900, "no"],
-    ["Social media image", 1200, 630, "no"],
+    [
+      "Social media image",
+      1200,
+      630,
+      "no",
+      [
+        ["May crop", 0, 0, 0.2417, 1],
+        ["May crop", 0.7583, 0, 0.2417, 1],
+      ],
+    ],
     ["Logo (transparent PNG)", 1000, 500, "no"],
-    ["Favicon", 32, 32, "no"],
+    ["Favicon", 192, 192, "no"],
   ],
   "Unity Asset Store": [
     ["Icon", 160, 160, "no"],
@@ -136,7 +149,7 @@ function pick(t) {
 function fitView() {
   const maxW = Math.max(100, cv.parentElement.clientWidth),
     maxH = innerHeight * 0.62;
-  const k = Math.min(maxW / W, maxH / H);
+  const k = Math.min(maxW / W, maxH / H, 3);
   cv.style.width = W * k + "px";
   cv.style.height = H * k + "px";
 }
