@@ -579,7 +579,7 @@ html {
 
 /* preview: reserve the biggest state of every block */
 .stage {
-  min-height: 62vh;
+  min-height: 340px; /* canvas decides the height; this only stops wide banners collapsing */
   align-items: center;
 }
 #status {
