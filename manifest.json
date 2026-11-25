@@ -1,0 +1,46 @@
+{
+  "id": "/index.html",
+  "name": "Social Template Fit",
+  "short_name": "Template Fit",
+  "description": "Fit your images to Facebook, Instagram and more. Runs fully in your browser.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0a0d12",
+  "theme_color": "#6b3fc0",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Editor on desktop"
+    },
+    {
+      "src": "screenshots/narrow.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "label": "Editor on mobile"
+    }
+  ]
+}

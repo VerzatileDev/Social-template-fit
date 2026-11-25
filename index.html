@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Social Template Fit</title>
     <link rel="stylesheet" href="style.css?v=3" />
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#6b3fc0" />
+    <link rel="apple-touch-icon" href="icons/icon-192.png" />
   </head>
   <body>
     <div class="page">
@@ -184,5 +187,10 @@
     </div>
     <script src="templates.js?v=3"></script>
     <script src="script.js?v=3"></script>
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("sw.js").catch(console.error);
+      }
+    </script>
   </body>
 </html>
