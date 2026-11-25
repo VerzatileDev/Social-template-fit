@@ -586,4 +586,239 @@ const PLATFORMS = {
       },
     ],
   },
+  Steam: {
+    templates: [
+      // Store assets
+      {
+        name: "Header capsule",
+        w: 920,
+        h: 430,
+        hint: "Required. Logo and artwork only, no extra text. Smaller versions are generated from this.",
+        zones: [
+          {
+            label: "Download badge",
+            x: 0,
+            y: 0.0,
+            w: 0.2283,
+            h: 0.5,
+          },
+          {
+            label: [
+              "Banner overlay area",
+              "Background artwork may extend into this area. Keep logos, text, and other important visual elements below.",
+            ],
+            x: 0,
+            y: 0,
+            w: 1.0,
+            h: 0.1,
+          },
+        ],
+      },
+
+      {
+        name: "Small capsule",
+        w: 462,
+        h: 174,
+        hint: "Required. Logo must stay legible at 120×45 and 184×69, so make it nearly fill the frame.",
+        zones: [
+          {
+            label: "Download badge",
+            x: 0,
+            y: 0,
+            w: 0.2468,
+            h: 0.6494,
+            fontSize: 10,
+          },
+          {
+            label: ["Banner overlay: Keep clear of important visual elements."],
+            x: 0,
+            y: 0,
+            w: 1.0,
+            h: 0.1,
+          },
+        ],
+      },
+
+      {
+        name: "Main capsule",
+        w: 1232,
+        h: 706,
+        hint: "Required. Logo and artwork only, no extra text.",
+        zones: [
+          {
+            label: "Download badge",
+            x: 0,
+            y: 0.0,
+            w: 0.18,
+            h: 0.3,
+          },
+          {
+            label: [
+              "Banner overlay area",
+              "Background artwork may extend into this area.",
+              "Keep logos, text, and other important visual elements below.",
+            ],
+            x: 0,
+            y: 0,
+            w: 1.0,
+            h: 0.1,
+            fontSize: 18,
+          },
+        ],
+      },
+
+      {
+        name: "Vertical capsule",
+        w: 748,
+        h: 896,
+        hint: "Do not include quotes or other strings of text beyond the title of your game. The game's logotype should be easily legible against the background.",
+        zones: [
+          {
+            label: [
+              "Banner overlay area",
+              "Background artwork may extend into this area.",
+              "Keep logos, text, and other important visual elements below.",
+            ],
+            x: 0,
+            y: 0,
+            w: 1.0,
+            h: 0.1,
+          },
+        ],
+      },
+
+      {
+        name: "Header Capsule (Bundle)",
+        w: 1414,
+        h: 464,
+        hint: "Only needed if you make a bundle. Template is 1414×464 (the docs page lists half-size 707×232). Keep logos and text below the banner overlay.",
+        zones: [
+          {
+            label: [
+              "Banner overlay area: Background artwork may extend into this area.",
+            ],
+            x: 0,
+            y: 0,
+            w: 1,
+            h: 0.0991,
+            fontSize: 44,
+          },
+        ],
+      },
+
+      {
+        name: "Library capsule",
+        w: 600,
+        h: 900,
+        hint: "Just your game logo and artwork.",
+        zones: [
+          {
+            label: "Occasional block",
+            x: 0,
+            y: 0,
+            w: 1,
+            h: 0.0611,
+            fontSize: 24,
+          },
+          {
+            label: [
+              "These specs are sometimes covered.",
+              "Avoid important features such as faces or logos.",
+            ],
+            x: 0,
+            y: 0.9044,
+            w: 1,
+            h: 0.0956,
+            fontSize: 18,
+          },
+          { label: "", x: 0, y: 0.0611, w: 0.03, h: 0.8433 },
+          { label: "", x: 0.9717, y: 0.0611, w: 0.0283, h: 0.8433 },
+          {
+            label: ["Download", "icon"],
+            x: 0.03,
+            y: 0.8433,
+            w: 0.2017,
+            h: 0.0611,
+            fontSize: 18,
+          },
+        ],
+      },
+
+      {
+        name: "Library Logo",
+        w: 1280,
+        h: 720,
+        hint: " Just your game logo. Will be displayed on top of Hero Graphic.",
+      },
+
+      {
+        name: "Library Header",
+        w: 920,
+        h: 430,
+        hint: " Just your game logo and artwork ",
+      },
+
+      {
+        name: "Library hero",
+        w: 3840,
+        h: 1240,
+        hint: "Required. PNG. Artwork only, no text. Extend artwork across the entire template. Keep all critical content inside the central safe area.",
+        zones: [
+          {
+            label: "Keep all critical content in the safe area",
+            x: 0,
+            y: 0,
+            w: 0.38802,
+            h: 1,
+            fontSize: 64,
+          },
+          {
+            label: "Keep all critical content in the safe area",
+            x: 0.61198,
+            y: 0,
+            w: 0.38802,
+            h: 1,
+            fontSize: 64,
+          },
+          {
+            label: "Potential crop area",
+            x: 0.38802,
+            y: 0,
+            w: 0.22396,
+            h: 0.34677,
+            fontSize: 64,
+          },
+          {
+            label: "",
+            x: 0.38802,
+            y: 0.65323,
+            w: 0.22396,
+            h: 0.34677,
+            fontSize: 64,
+          },
+        ],
+      },
+
+      {
+        name: "Event Cover",
+        w: 800,
+        h: 450,
+        hint: " This image should primarily contain the artwork and branding for your event.",
+      },
+
+      {
+        name: "Event header",
+        w: 1920,
+        h: 622,
+        hint: "Suggested. Keep logo and critical text inside the center box (y 114–495). Artwork should bleed into the top and bottom bands.",
+      },
+
+      {
+        name: "Shortcut icon",
+        w: 256,
+        h: 256,
+        hint: "Game seen on desktop as app icon on upload converted to .ico",
+      },
+    ],
+  },
 };

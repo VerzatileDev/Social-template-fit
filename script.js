@@ -32,6 +32,8 @@ const $ = (id) =>
 const cv = $("cv"),
   ctx = cv.getContext("2d");
 
+const DPR = 3; // High-DPI rendering: 3× internal canvas resolution for a sharper preview.
+
 let plat, tpl;
 {
   const [p, n] = DEFAULT_TEMPLATE;
@@ -41,6 +43,18 @@ let plat, tpl;
 }
 let W = tpl.w,
   H = tpl.h;
+
+function resizeCanvas() {
+  cv.width = Math.round(W * DPR);
+  cv.height = Math.round(H * DPR);
+
+  cv.style.width = W + "px";
+  cv.style.height = H + "px";
+
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+}
 let layers = [],
   sel = null,
   uid = 1,
@@ -106,8 +120,7 @@ function pick(t) {
   tpl = t;
   W = t.w;
   H = t.h;
-  cv.width = W;
-  cv.height = H;
+  resizeCanvas();
   layers.forEach((l) => {
     if (l.x > W || l.y > H) {
       l.x = W / 2;
@@ -693,7 +706,7 @@ function stillBlob(s, type, q) {
     oc.fillStyle = exportBg();
     oc.fillRect(0, 0, w, h);
   }
-  oc.drawImage(cv, 0, 0, w, h);
+  oc.drawImage(cv, 0, 0, cv.width, cv.height, 0, 0, w, h);
   return new Promise((res) =>
     off.toBlob((blob) => res({ blob, w, h }), type, q),
   );
@@ -961,7 +974,7 @@ async function encodeGif(gifenc, { s, fps, c }, label) {
     draw(true);
     oc.fillStyle = exportBg();
     oc.fillRect(0, 0, w, h);
-    oc.drawImage(cv, 0, 0, w, h);
+    oc.drawImage(cv, 0, 0, cv.width, cv.height, 0, 0, w, h);
     const { data } = oc.getImageData(0, 0, w, h),
       palette = quantize(data, c);
     gif.writeFrame(applyPalette(data, palette), w, h, {
@@ -1065,42 +1078,77 @@ function animChip() {
 }
 
 /* ---------- Platform overlay zones (e.g. itch.io GIF label, social image crop areas) ---------- */
+
 function drawZones(lw) {
   if (!tpl.zones.length || !$("zones").checked) return;
+
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  tpl.zones.forEach(({ label, x, y, w, h }) => {
-    const rx = x * W,
-      ry = y * H,
-      rw = w * W,
-      rh = h * H;
+
+  tpl.zones.forEach(({ label, x, y, w, h, fontSize }) => {
+    const rx = x * W;
+    const ry = y * H;
+    const rw = w * W;
+    const rh = h * H;
+
     const tall = rh > rw * 1.5;
+
+    // Draw the highlighted zone only once
     ctx.fillStyle = "rgba(255,45,111,.38)";
     ctx.fillRect(rx, ry, rw, rh);
-    halo(rx, ry, rw, rh, lw, [lw * 4, lw * 3], "#ff2d6f");
+
+    //halo(rx, ry, rw, rh, lw, [lw, lw], "#ff2d6f");
+
+    // Support both existing string labels and multiple lines
+    const lines = (Array.isArray(label) ? label : [label]).flatMap((line) =>
+      String(line).split("\n"),
+    );
+
     ctx.save();
     ctx.translate(rx + rw / 2, ry + rh / 2);
-    let fs, max;
+
+    let fs;
+    let max;
+    let availableHeight;
+
     if (tall) {
       ctx.rotate(-Math.PI / 2);
-      fs = Math.max(11, Math.min(rw * 0.28, H / 14));
+
+      fs = fontSize ?? Math.max(11, Math.min(rw * 0.28, H / 14));
       max = rh - 8;
+      availableHeight = rw - 8;
     } else {
-      fs = Math.max(11, H / 30);
+      fs = fontSize ?? Math.max(11, H / 30);
       max = rw - 4;
+      availableHeight = rh - 4;
     }
+
+    // Reduce font size if multiple lines need more vertical space
+    const lineHeight = 1.2;
+    fs = Math.min(fs, availableHeight / (lines.length * lineHeight));
+
     ctx.font = `700 ${fs}px system-ui,sans-serif`;
     ctx.lineWidth = lw * 1.5;
     ctx.strokeStyle = "rgba(0,0,0,.6)";
     ctx.lineJoin = "round";
-    ctx.strokeText(label, 0, 0, max);
     ctx.fillStyle = "#fff";
-    ctx.fillText(label, 0, 0, max);
+
+    // Draw every line, centred inside the same zone
+    const totalHeight = lines.length * fs * lineHeight;
+    lines.forEach((line, i) => {
+      const ly = -totalHeight / 2 + fs * lineHeight * (i + 0.5);
+
+      ctx.strokeText(line, 0, ly, max);
+      ctx.fillText(line, 0, ly, max);
+    });
+
     ctx.restore();
   });
+
   ctx.restore();
 }
+
 $("zones").onchange = () => draw();
 
 /* ---------- MP4 export ----------
@@ -1151,7 +1199,7 @@ $("dlmp4").onclick = () =>
       draw(true);
       oc.fillStyle = exportBg();
       oc.fillRect(0, 0, w, h);
-      oc.drawImage(cv, 0, 0);
+      oc.drawImage(cv, 0, 0, cv.width, cv.height, 0, 0, w, h);
       const frame = new VideoFrame(off, {
         timestamp: Math.round((i * 1e6) / FPS),
         duration: Math.round(1e6 / FPS),
