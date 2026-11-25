@@ -1,0 +1,26 @@
+{
+  "name": "social-template-fit",
+  "version": "1.0.0",
+  "description": "Fit your images to Facebook, Instagram and more.",
+  "main": "main.js",
+  "author": "VerzatileDev",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win portable nsis"
+  },
+  "build": {
+    "appId": "com.verzatiledev.socialtemplatefit",
+    "productName": "Social Template Fit",
+    "files": [
+      "index.html",
+      "style.css",
+      "script.js",
+      "templates.js",
+      "main.js",
+      "icons/**/*"
+    ],
+    "win": {
+      "icon": "icons/icon-512.png"
+    }
+  }
+}
